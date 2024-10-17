@@ -1,5 +1,0 @@
-transformers[torch]
-Pillow
-pytesseract
-torch
-torchvision

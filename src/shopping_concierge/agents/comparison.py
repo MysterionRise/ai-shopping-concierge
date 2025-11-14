@@ -190,8 +190,7 @@ Provide ONLY the JSON object, no additional text.
                     "rank": i,
                     "score": product.get("rating", 0) * 2,  # Scale to 10
                     "rationale": (
-                        f"High rating ({product.get('rating')}) "
-                        f"at ${product.get('price')}"
+                        f"High rating ({product.get('rating')}) " f"at ${product.get('price')}"
                     ),
                     "pros": product.get("features", [])[:3],
                     "cons": ["Limited analysis available"],

@@ -51,7 +51,9 @@ def test_demo_llm_search_intent():
     llm = DemoChatModel()
     result = llm.invoke(
         [
-            SystemMessage(content="You are a search intent extractor for a beauty product database."),
+            SystemMessage(
+                content="You are a search intent extractor for a beauty product database."
+            ),
             HumanMessage(content="I need a serum for dry skin"),
         ]
     )

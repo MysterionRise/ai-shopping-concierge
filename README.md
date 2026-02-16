@@ -6,30 +6,30 @@ A production-grade multi-agent AI system for personalized beauty and skincare re
 
 ```
                     ┌─────────────┐
-                    │   Frontend   │  React 18 + TypeScript + Tailwind
-                    │  (port 3000) │
+                    │   Frontend  │  React 18 + TypeScript + Tailwind
+                    │  (port 3000)│
                     └──────┬──────┘
                            │
                     ┌──────┴──────┐
-                    │    Nginx     │  Reverse Proxy
-                    │  (port 80)   │
+                    │    Nginx    │  Reverse Proxy
+                    │  (port 80)  │
                     └──────┬──────┘
                            │
                     ┌──────┴──────┐
-                    │   FastAPI    │  Backend API
-                    │  (port 8080) │
+                    │   FastAPI   │  Backend API
+                    │  (port 8080)│
                     └──────┬──────┘
                            │
               ┌────────────┼────────────┐
               │            │            │
     ┌─────────┴──┐  ┌─────┴─────┐  ┌──┴─────────┐
-    │  LangGraph  │  │  Safety   │  │  Persona   │
-    │   Agents    │  │   Gate    │  │  Monitor   │
+    │  LangGraph │  │  Safety   │  │  Persona   │
+    │   Agents   │  │   Gate    │  │  Monitor   │
     └─────────┬──┘  └─────┬─────┘  └──┬─────────┘
               │            │            │
     ┌─────────┴──┐  ┌─────┴─────┐  ┌──┴─────────┐
-    │ PostgreSQL  │  │   Redis   │  │  ChromaDB  │
-    │ (pgvector)  │  │           │  │  (vectors) │
+    │ PostgreSQL │  │   Redis   │  │  ChromaDB  │
+    │ (pgvector) │  │           │  │  (vectors) │
     └────────────┘  └───────────┘  └────────────┘
 ```
 

@@ -48,7 +48,8 @@ async def triage_router_node(state: AgentState) -> dict:
                 HumanMessage(content=user_text),
             ]
         )
-        intent = response.content.strip().lower()
+        content = response.content if isinstance(response.content, str) else str(response.content)
+        intent = content.strip().lower()
 
         if intent not in VALID_INTENTS:
             logger.warning("Unknown intent from LLM, defaulting to general_chat", raw_intent=intent)

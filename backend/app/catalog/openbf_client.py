@@ -31,7 +31,7 @@ class OpenBeautyFactsClient:
         page: int = 1,
         page_size: int = 50,
     ) -> list[OpenBFProduct]:
-        params = {
+        params: dict[str, str | int | bool] = {
             "action": "process",
             "json": "true",
             "page": page,
@@ -62,7 +62,8 @@ class OpenBeautyFactsClient:
                             image_url=item.get("image_url", ""),
                         )
                     )
-                except Exception:
+                except Exception as e:
+                    logger.debug("Failed to parse product item", error=str(e))
                     continue
             return products
         except Exception as e:

@@ -34,10 +34,10 @@ async def add_constraint(db: AsyncSession, user_id: str, constraint: str, is_har
         return
 
     if is_hard:
-        allergies = user.allergies or []
-        if isinstance(allergies, list) and constraint not in allergies:
+        allergies: list[str] = list(user.allergies or [])
+        if constraint not in allergies:
             allergies.append(constraint)
-            user.allergies = allergies
+            user.allergies = allergies  # type: ignore[assignment]
     else:
         preferences = user.preferences or {}
         if isinstance(preferences, dict):

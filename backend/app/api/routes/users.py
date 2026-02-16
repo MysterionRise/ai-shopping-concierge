@@ -59,8 +59,8 @@ async def create_user(data: UserCreate, db: AsyncSession = Depends(get_db_sessio
         id=str(user.id),
         display_name=user.display_name,
         skin_type=user.skin_type,
-        skin_concerns=user.skin_concerns or [],
-        allergies=user.allergies or [],
+        skin_concerns=list(user.skin_concerns or []),
+        allergies=list(user.allergies or []),
         preferences=user.preferences or {},
     )
 
@@ -76,8 +76,8 @@ async def get_user(user_id: str, db: AsyncSession = Depends(get_db_session)):
         id=str(user.id),
         display_name=user.display_name,
         skin_type=user.skin_type,
-        skin_concerns=user.skin_concerns or [],
-        allergies=user.allergies or [],
+        skin_concerns=list(user.skin_concerns or []),
+        allergies=list(user.allergies or []),
         preferences=user.preferences or {},
     )
 
@@ -94,9 +94,9 @@ async def update_user(user_id: str, data: UserUpdate, db: AsyncSession = Depends
     if data.skin_type is not None:
         user.skin_type = data.skin_type
     if data.skin_concerns is not None:
-        user.skin_concerns = data.skin_concerns
+        user.skin_concerns = data.skin_concerns  # type: ignore[assignment]
     if data.allergies is not None:
-        user.allergies = data.allergies
+        user.allergies = data.allergies  # type: ignore[assignment]
     if data.preferences is not None:
         user.preferences = data.preferences
 
@@ -107,7 +107,7 @@ async def update_user(user_id: str, data: UserUpdate, db: AsyncSession = Depends
         id=str(user.id),
         display_name=user.display_name,
         skin_type=user.skin_type,
-        skin_concerns=user.skin_concerns or [],
-        allergies=user.allergies or [],
+        skin_concerns=list(user.skin_concerns or []),
+        allergies=list(user.allergies or []),
         preferences=user.preferences or {},
     )

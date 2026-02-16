@@ -67,13 +67,13 @@ async def get_messages(
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")
 
-    stmt = (
+    msg_stmt = (
         select(Message)
         .where(Message.conversation_id == conversation_id)
         .order_by(Message.created_at)
     )
-    result = await db.execute(stmt)
-    messages = result.scalars().all()
+    msg_result = await db.execute(msg_stmt)
+    messages = msg_result.scalars().all()
 
     return [
         MessageResponse(

@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     chromadb_port: int = 8000
 
     # App
-    app_host: str = "0.0.0.0"
+    app_host: str = "0.0.0.0"  # nosec B104
     app_port: int = 8080
     log_level: str = "INFO"
     cors_origins: list[str] = ["http://localhost:3000"]

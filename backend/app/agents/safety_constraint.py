@@ -89,7 +89,10 @@ async def safety_constraint_node(state: AgentState) -> dict:
             )
 
             # Parse LLM response for any UNSAFE flags
-            for line in response.content.split("\n"):
+            safety_content = (
+                response.content if isinstance(response.content, str) else str(response.content)
+            )
+            for line in safety_content.split("\n"):
                 if "UNSAFE" in line.upper():
                     for product in safe_products[:]:
                         if product.get("name", "").lower() in line.lower():

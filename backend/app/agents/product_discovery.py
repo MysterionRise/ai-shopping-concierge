@@ -58,7 +58,8 @@ async def product_discovery_node(state: AgentState) -> dict:
                 HumanMessage(content=user_text),
             ]
         )
-        intent = parse_search_intent(response.content)
+        content = response.content if isinstance(response.content, str) else str(response.content)
+        intent = parse_search_intent(content)
     except Exception as e:
         logger.error("Search intent extraction failed", error=str(e))
         intent = SearchIntent()

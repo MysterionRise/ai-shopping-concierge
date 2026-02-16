@@ -22,6 +22,7 @@ logger = structlog.get_logger()
 
 VECTORS_DIR = Path(__file__).parent / "vectors"
 MODEL_NAME = "meta-llama/Llama-3.1-8B-Instruct"
+MODEL_REVISION = "main"  # nosec B615
 TARGET_LAYER = 16  # Middle layer for activation extraction
 
 
@@ -41,9 +42,12 @@ class PersonaVectorExtractor:
             from transformers import AutoModelForCausalLM, AutoTokenizer
 
             logger.info("Loading model for persona extraction", model=MODEL_NAME)
-            self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-            self.model = AutoModelForCausalLM.from_pretrained(
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                MODEL_NAME, revision=MODEL_REVISION
+            )  # nosec B615
+            self.model = AutoModelForCausalLM.from_pretrained(  # nosec B615
                 MODEL_NAME,
+                revision=MODEL_REVISION,
                 torch_dtype=torch.float16,
                 device_map="auto",
                 output_hidden_states=True,

@@ -1,5 +1,5 @@
 import structlog
-from langchain_core.messages import AIMessage, SystemMessage
+from langchain_core.messages import AIMessage, BaseMessage, SystemMessage
 
 from app.agents.state import AgentState
 from app.core.llm import get_llm
@@ -78,7 +78,10 @@ async def response_synth_node(state: AgentState) -> dict:
     llm = get_llm()
 
     try:
-        response = await llm.ainvoke([SystemMessage(content=system_prompt)] + state["messages"])
+        messages: list[BaseMessage] = [SystemMessage(content=system_prompt)] + list(
+            state["messages"]
+        )
+        response = await llm.ainvoke(messages)
         return {"messages": [AIMessage(content=response.content)]}
     except Exception as e:
         logger.error("Response synthesis failed", error=str(e))

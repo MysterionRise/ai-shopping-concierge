@@ -1,3 +1,5 @@
+from typing import Any
+
 import chromadb
 import structlog
 from chromadb.config import Settings as ChromaSettings
@@ -9,7 +11,7 @@ logger = structlog.get_logger()
 COLLECTION_NAME = "beauty_products"
 
 
-def get_chroma_client() -> chromadb.HttpClient:
+def get_chroma_client() -> Any:
     return chromadb.HttpClient(
         host=settings.chromadb_host,
         port=settings.chromadb_port,
@@ -17,7 +19,7 @@ def get_chroma_client() -> chromadb.HttpClient:
     )
 
 
-def get_or_create_collection(client: chromadb.HttpClient | None = None):
+def get_or_create_collection(client: Any = None):
     if client is None:
         client = get_chroma_client()
     return client.get_or_create_collection(

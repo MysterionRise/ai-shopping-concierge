@@ -1,5 +1,6 @@
 import json
 import uuid
+from typing import Any
 
 import structlog
 from fastapi import APIRouter, Depends, WebSocket
@@ -52,7 +53,7 @@ async def chat(
         )
 
     # Load user profile and constraints
-    user_profile = {}
+    user_profile: dict[str, Any] = {}
     hard_constraints = []
     soft_preferences = []
 
@@ -122,7 +123,7 @@ async def chat_stream(
 
     conversation_id = request.conversation_id or str(uuid.uuid4())
 
-    user_profile = {}
+    user_profile: dict[str, Any] = {}
     hard_constraints = []
     soft_preferences = []
 
@@ -137,8 +138,8 @@ async def chat_stream(
             }
             hard_constraints = await get_hard_constraints(db, request.user_id)
             soft_preferences = await get_soft_preferences(db, request.user_id)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("Could not load user profile for streaming", error=str(e))
 
     initial_state = {
         "messages": [HumanMessage(content=request.message)],

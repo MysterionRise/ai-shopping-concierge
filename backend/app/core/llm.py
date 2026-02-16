@@ -4,6 +4,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_openai import ChatOpenAI
+from pydantic import SecretStr
 
 from app.config import settings
 
@@ -18,14 +19,22 @@ class DemoChatModel(BaseChatModel):
         return "demo"
 
     def _generate(
-        self, messages: list[BaseMessage], stop: list[str] | None = None, **kwargs: Any
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: Any = None,
+        **kwargs: Any,
     ) -> ChatResult:
         return ChatResult(
             generations=[ChatGeneration(message=AIMessage(content=self._pick_response(messages)))]
         )
 
     async def _agenerate(
-        self, messages: list[BaseMessage], stop: list[str] | None = None, **kwargs: Any
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: Any = None,
+        **kwargs: Any,
     ) -> ChatResult:
         return self._generate(messages, stop, **kwargs)
 
@@ -33,10 +42,11 @@ class DemoChatModel(BaseChatModel):
         system = ""
         user = ""
         for m in messages:
+            text = m.content if isinstance(m.content, str) else ""
             if m.type == "system":
-                system = m.content.lower()
+                system = text.lower()
             elif m.type == "human":
-                user = m.content.lower()
+                user = text.lower()
 
         # Triage router
         if "classify" in system and "intent" in system:
@@ -145,7 +155,7 @@ def get_llm(**kwargs) -> BaseChatModel:
         return DemoChatModel()
     return ChatOpenAI(
         base_url=settings.openrouter_base_url,
-        api_key=settings.openrouter_api_key,
+        api_key=SecretStr(settings.openrouter_api_key),
         model=settings.openrouter_model,
         temperature=kwargs.pop("temperature", 0.7),
         **kwargs,

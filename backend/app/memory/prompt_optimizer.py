@@ -10,11 +10,11 @@ logger = structlog.get_logger()
 
 
 class PromptOptimizer:
-    def __init__(self):
+    def __init__(self) -> None:
         self.base_prompts: dict[str, str] = {}
-        self.optimization_history: list[dict] = []
+        self.optimization_history: list[dict[str, object]] = []
 
-    def register_base_prompt(self, agent_name: str, prompt: str):
+    def register_base_prompt(self, agent_name: str, prompt: str) -> None:
         self.base_prompts[agent_name] = prompt
 
     def get_optimized_prompt(self, agent_name: str) -> str:
@@ -26,7 +26,7 @@ class PromptOptimizer:
         prompt_used: str,
         outcome: str,
         success: bool,
-    ):
+    ) -> None:
         self.optimization_history.append(
             {
                 "agent": agent_name,

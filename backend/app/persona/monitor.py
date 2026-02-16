@@ -82,7 +82,7 @@ class PersonaMonitor:
 
             # Also append to conversation history
             history_key = f"{REDIS_PERSONA_PREFIX}history:{conversation_id}"
-            await self.redis.rpush(history_key, json.dumps(score_data))
+            await self.redis.rpush(history_key, json.dumps(score_data))  # type: ignore[misc]
 
             # Check thresholds
             for trait in PERSONA_TRAITS:
@@ -103,12 +103,12 @@ class PersonaMonitor:
         key = f"{REDIS_PERSONA_PREFIX}{conversation_id}:{message_id}"
         data = await self.redis.get(key)
         if data:
-            return json.loads(data)
+            return json.loads(data)  # type: ignore[no-any-return]
         return {}
 
     async def get_history(self, conversation_id: str) -> list[dict]:
         key = f"{REDIS_PERSONA_PREFIX}history:{conversation_id}"
-        items = await self.redis.lrange(key, 0, -1)
+        items = await self.redis.lrange(key, 0, -1)  # type: ignore[misc]
         return [json.loads(item) for item in items]
 
     async def get_alerts(self, conversation_id: str) -> list[dict]:

@@ -158,3 +158,25 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 .idea/
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/build/
+.next/
+*.tsbuildinfo
+
+# Docker
+docker-compose.override.yml
+
+# ChromaDB
+chroma_data/
+
+# Persona vectors (large binary files)
+*.pt
+
+# Alembic
+backend/alembic/versions/*.pyc
+
+# OS files
+.DS_Store

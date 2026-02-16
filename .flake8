@@ -11,7 +11,6 @@ exclude =
     *.egg-info,
     .pytest_cache,
     .mypy_cache,
-    src/shopping_concierge/prompts/templates.py
-per-file-ignores =
-    # Ignore line length in prompt template strings
-    src/shopping_concierge/prompts/templates.py:E501
+    node_modules,
+    frontend,
+    backend/alembic/versions

@@ -1,0 +1,61 @@
+import { useEffect, useRef } from 'react'
+import { ChatMessage } from '../../types'
+import MessageBubble from './MessageBubble'
+
+interface MessageListProps {
+  messages: ChatMessage[]
+  isTyping: boolean
+  streamingContent: string
+}
+
+export default function MessageList({
+  messages,
+  isTyping,
+  streamingContent,
+}: MessageListProps) {
+  const bottomRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, streamingContent])
+
+  return (
+    <div className="flex-1 overflow-y-auto p-4">
+      <div className="max-w-3xl mx-auto">
+        {messages.length === 0 && (
+          <div className="text-center py-20">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-2">
+              Welcome to Beauty Concierge
+            </h2>
+            <p className="text-gray-500">
+              Ask me about skincare products, ingredients, or routines.
+              <br />I prioritize your safety — tell me about any allergies!
+            </p>
+          </div>
+        )}
+        {messages.map((msg) => (
+          <MessageBubble key={msg.id} message={msg} />
+        ))}
+        {isTyping && streamingContent && (
+          <div className="flex justify-start mb-4">
+            <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-white border border-gray-200 text-gray-800">
+              <p className="text-sm">{streamingContent}</p>
+            </div>
+          </div>
+        )}
+        {isTyping && !streamingContent && (
+          <div className="flex justify-start mb-4">
+            <div className="rounded-2xl px-4 py-3 bg-white border border-gray-200">
+              <div className="flex gap-1">
+                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" />
+                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce [animation-delay:0.15s]" />
+                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce [animation-delay:0.3s]" />
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+    </div>
+  )
+}

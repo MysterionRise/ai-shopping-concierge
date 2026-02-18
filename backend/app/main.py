@@ -4,6 +4,7 @@ import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.agents.graph import compile_graph
 from app.api.routes import chat, conversations, health, memory, persona, products, users
 from app.config import settings
 
@@ -24,7 +25,27 @@ logger = structlog.get_logger()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting Beauty Concierge API")
+
+    # Initialize LangGraph checkpointer
+    checkpointer_cm = None
+    try:
+        from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+
+        checkpointer_cm = AsyncPostgresSaver.from_conn_string(settings.checkpoint_db_url)
+        checkpointer = await checkpointer_cm.__aenter__()
+        await checkpointer.setup()
+        app.state.graph = compile_graph(checkpointer)
+        logger.info("LangGraph checkpointer: AsyncPostgresSaver (Postgres)")
+    except Exception as e:
+        logger.warning("Postgres checkpointer failed, using MemorySaver", error=str(e))
+        app.state.graph = compile_graph()
+        checkpointer_cm = None
+
     yield
+
+    if checkpointer_cm is not None:
+        await checkpointer_cm.__aexit__(None, None, None)
+
     logger.info("Shutting down Beauty Concierge API")
 
 

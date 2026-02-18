@@ -49,10 +49,8 @@ def build_graph() -> StateGraph:
     return graph
 
 
-# Module-level singleton: compile graph once, reuse across requests
-_checkpointer = MemorySaver()
-_compiled_graph = build_graph().compile(checkpointer=_checkpointer)
-
-
-def get_compiled_graph():
-    return _compiled_graph
+def compile_graph(checkpointer=None):
+    """Compile graph with given checkpointer. Falls back to MemorySaver."""
+    if checkpointer is None:
+        checkpointer = MemorySaver()
+    return build_graph().compile(checkpointer=checkpointer)

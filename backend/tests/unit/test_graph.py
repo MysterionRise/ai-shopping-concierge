@@ -2,11 +2,11 @@ from unittest.mock import AsyncMock
 
 from langchain_core.messages import AIMessage, HumanMessage
 
-from app.agents.graph import build_graph, get_compiled_graph, route_after_triage
+from app.agents.graph import build_graph, compile_graph, route_after_triage
 
 
 def test_graph_compiles():
-    graph = get_compiled_graph()
+    graph = compile_graph()
     assert graph is not None
 
 
@@ -46,7 +46,7 @@ def test_route_after_triage_empty():
 async def test_full_graph_invocation(mock_llm):
     mock_llm.ainvoke = AsyncMock(return_value=AIMessage(content="general_chat"))
 
-    graph = get_compiled_graph()
+    graph = compile_graph()
 
     initial_state = {
         "messages": [HumanMessage(content="Hello!")],

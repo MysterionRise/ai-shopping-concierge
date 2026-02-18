@@ -3,14 +3,13 @@ import uuid
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, Depends, WebSocket
+from fastapi import APIRouter, Depends, Request, WebSocket
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.agents.graph import get_compiled_graph
 from app.agents.safety_constraint import OVERRIDE_REFUSAL, check_override_attempt
 from app.dependencies import get_db_session
 from app.memory.constraint_store import get_user_constraints
@@ -39,6 +38,7 @@ class ChatResponse(BaseModel):
 @router.post("/chat")
 async def chat(
     request: ChatRequest,
+    raw_request: Request,
     db: AsyncSession = Depends(get_db_session),
 ) -> ChatResponse:
     logger.info("Chat request", user_id=request.user_id, message=request.message[:100])
@@ -72,7 +72,7 @@ async def chat(
     except Exception as e:
         logger.warning("Could not load user profile", error=str(e))
 
-    graph = get_compiled_graph()
+    graph = raw_request.app.state.graph
 
     initial_state = {
         "messages": [HumanMessage(content=request.message)],
@@ -148,6 +148,7 @@ async def chat(
 @router.post("/chat/stream")
 async def chat_stream(
     request: ChatRequest,
+    raw_request: Request,
     db: AsyncSession = Depends(get_db_session),
 ):
     """SSE streaming endpoint for chat responses."""
@@ -196,7 +197,7 @@ async def chat_stream(
     }
 
     async def event_stream():
-        graph = get_compiled_graph()
+        graph = raw_request.app.state.graph
         last_model_content = ""
         try:
             async for event in graph.astream_events(

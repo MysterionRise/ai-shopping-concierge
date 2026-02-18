@@ -4,11 +4,13 @@ import pytest
 from fastapi.testclient import TestClient
 from langchain_core.messages import AIMessage
 
+from app.agents.graph import compile_graph
 from app.main import app
 
 
 @pytest.fixture
 def client():
+    app.state.graph = compile_graph()
     return TestClient(app)
 
 

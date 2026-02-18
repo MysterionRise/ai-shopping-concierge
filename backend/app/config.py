@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://concierge:concierge@localhost:5432/concierge"
     database_url_sync: str = "postgresql://concierge:concierge@localhost:5432/concierge"
 
+    # Checkpoint (psycopg format — used by langgraph-checkpoint-postgres)
+    checkpoint_db_url: str = "postgresql://concierge:concierge@localhost:5432/concierge"
+
     # Redis
     redis_url: str = "redis://localhost:6379/0"
 

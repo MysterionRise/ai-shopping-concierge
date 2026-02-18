@@ -1,4 +1,4 @@
-.PHONY: infra-up infra-down backend-dev frontend-dev test lint seed seed-catalog
+.PHONY: infra-up infra-down backend-dev frontend-dev test lint seed seed-catalog migrate-memory
 
 infra-up:
 	docker compose up -d postgres redis chromadb
@@ -36,3 +36,6 @@ migrate:
 
 migrate-create:
 	cd backend && alembic revision --autogenerate -m "$(MSG)"
+
+migrate-memory:
+	cd backend && python -m scripts.migrate_redis_to_langmem

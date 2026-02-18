@@ -9,6 +9,12 @@ from pydantic import BaseModel, Field
 
 from app.agents.state import AgentState
 from app.core.llm import get_llm
+from app.memory.conflict_detector import (
+    check_and_store_conflict,
+    format_conflict_prompt,
+    load_pending_confirmations,
+    resolve_conflict,
+)
 from app.memory.langmem_config import constraints_ns, user_facts_ns
 
 logger = structlog.get_logger()
@@ -61,9 +67,10 @@ def detect_user_facts(text: str) -> list[dict]:
 
 
 async def _load_memory_context(store: BaseStore, user_id: str, user_text: str) -> dict:
-    """Load constraints and relevant facts from the LangMem store."""
+    """Load constraints, relevant facts, and pending confirmations from the LangMem store."""
     active_constraints: list[dict] = []
     memory_context: list[str] = []
+    conflict_prompt = ""
 
     try:
         # Always load ALL constraints for this user
@@ -73,10 +80,21 @@ async def _load_memory_context(store: BaseStore, user_id: str, user_text: str) -
         # Search for relevant facts based on the user's message
         fact_items = await store.asearch(user_facts_ns(user_id), query=user_text, limit=10)
         memory_context = [item.value.get("content", str(item.value)) for item in fact_items]
+
+        # Check for pending conflict confirmations
+        confirmations = await load_pending_confirmations(store, user_id)
+        if confirmations:
+            conflict_prompt = format_conflict_prompt(confirmations)
+            # Increment ignore attempts for these confirmations
+            for conf in confirmations:
+                await resolve_conflict(store, user_id, conf["key"], "ignore", conf)
     except Exception as e:
         logger.warning("Failed to load memory context", error=str(e), user_id=user_id)
 
-    return {"active_constraints": active_constraints, "memory_context": memory_context}
+    result = {"active_constraints": active_constraints, "memory_context": memory_context}
+    if conflict_prompt:
+        result["memory_context"] = memory_context + [conflict_prompt]
+    return result
 
 
 async def _store_detected_facts(store: BaseStore, user_id: str, facts: list[dict]) -> list[str]:
@@ -120,11 +138,10 @@ async def _store_detected_facts(store: BaseStore, user_id: str, facts: list[dict
             )
         else:
             key = f"{category}_{uuid.uuid4().hex[:8]}"
-            await store.aput(
-                user_facts_ns(user_id),
-                key,
-                {"category": category, "value": value, "content": f"{category}: {value}"},
-            )
+            fact_value = {"category": category, "value": value, "content": f"{category}: {value}"}
+            # Check for contradictions before storing
+            await check_and_store_conflict(store, user_id, key, fact_value)
+            await store.aput(user_facts_ns(user_id), key, fact_value)
             if category == "skin_type":
                 notifications.append(f"I've noted that you have {value} skin.")
             elif category == "preference":

@@ -257,7 +257,7 @@ make migrate         # alembic upgrade head
 | File | Purpose |
 |------|---------|
 | `backend/app/agents/state.py` | AgentState TypedDict — the single source of truth for graph state |
-| `backend/app/agents/graph.py` | LangGraph StateGraph wiring — all node connections and routing |
+| `backend/app/agents/graph.py` | LangGraph StateGraph wiring — `compile_graph()` accepts checkpointer (AsyncPostgresSaver in prod, MemorySaver fallback) |
 | `backend/app/agents/safety_constraint.py` | Dual-gate safety + override detection — the architectural centerpiece |
 | `backend/app/core/llm.py` | LLM factory + DemoChatModel — all LLM access goes through `get_llm()` |
 | `backend/app/config.py` | Pydantic Settings — all env vars |
@@ -300,6 +300,8 @@ make migrate         # alembic upgrade head
 - CI pipeline (GitHub Actions: lint, security, test)
 - 72 unit tests, 72% coverage
 - Demo scripts (scenario + test user generation)
+- LangGraph checkpointing via `AsyncPostgresSaver` (auto-creates tables, MemorySaver fallback)
+- Full Docker Compose E2E (6 services boot cleanly, backend runs alembic on startup, nginx reverse proxy with SSE support)
 
 ### Partially Implemented (Stubs/Placeholders)
 - **Product discovery:** Extracts search intent but returns empty results (ChromaDB query not wired to graph yet)
@@ -308,7 +310,6 @@ make migrate         # alembic upgrade head
 - **WebSocket chat:** Accepts connection then immediately closes
 - **Persona monitoring frontend:** Uses mock data (no real scores flowing yet)
 - **Memory viewer frontend:** Uses mock data
-- **LangGraph checkpointing:** `AsyncPostgresSaver` not configured in `get_compiled_graph()`
 
 ### Not Yet Implemented
 - Vector search integration (ChromaDB → product_discovery node)
@@ -317,8 +318,6 @@ make migrate         # alembic upgrade head
 - Real persona vector computation (requires torch + model download)
 - Frontend tests (vitest setup exists, no test files)
 - Integration tests
-- Full Docker stack build verification (`docker compose up --build`)
-- Nginx reverse proxy testing
 
 ---
 

@@ -85,13 +85,19 @@ def schedule_extraction(
     messages: list[dict[str, Any]],
     store: BaseStore | None,
     delay_seconds: int = 30,
+    memory_enabled: bool = True,
 ) -> None:
     """Schedule background memory extraction after a conversation ends.
 
     Waits delay_seconds before processing (in case user reconnects).
     Idempotent — skips already-processed conversations.
+    Skips if memory_enabled is False (user opted out).
     """
     if store is None:
+        return
+
+    if not memory_enabled:
+        logger.debug("Memory disabled for user, skipping extraction", user_id=user_id)
         return
 
     if conversation_id in _processed_conversations:

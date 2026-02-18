@@ -1,8 +1,10 @@
 import structlog
 from langchain_core.messages import AIMessage, BaseMessage, SystemMessage
+from langgraph.store.base import BaseStore
 
 from app.agents.state import AgentState
 from app.core.llm import get_llm
+from app.memory.langmem_config import constraints_ns, user_facts_ns
 
 logger = structlog.get_logger()
 
@@ -34,7 +36,29 @@ you're sensitive to. Here's what I flagged:
 Here are safe alternatives I found for you:"""
 
 
-async def response_synth_node(state: AgentState) -> dict:
+async def _load_all_memories(store: BaseStore, user_id: str) -> list[str]:
+    """Load all user memories for the memory_query intent."""
+    memories = []
+    try:
+        facts = await store.asearch(user_facts_ns(user_id), limit=50)
+        for item in facts:
+            content = item.value.get("content", "")
+            if content:
+                memories.append(content)
+    except Exception as e:
+        logger.warning("Failed to load facts for memory_query", error=str(e))
+    try:
+        constraint_items = await store.asearch(constraints_ns(user_id), limit=50)
+        for item in constraint_items:
+            content = item.value.get("content", "")
+            if content:
+                memories.append(content)
+    except Exception as e:
+        logger.warning("Failed to load constraints for memory_query", error=str(e))
+    return memories
+
+
+async def response_synth_node(state: AgentState, *, store: BaseStore = None) -> dict:
     logger.info("Response synthesis invoked", intent=state.get("current_intent"))
 
     intent = state.get("current_intent", "general_chat")
@@ -45,6 +69,23 @@ async def response_synth_node(state: AgentState) -> dict:
     memory_notifications = state.get("memory_notifications", [])
 
     context_parts = []
+
+    # For memory_query, load all memories and present them
+    if intent == "memory_query" and store:
+        user_id = state.get("user_id", "")
+        all_memories = await _load_all_memories(store, user_id) if user_id else []
+        if all_memories:
+            context_parts.append(
+                "The user wants to know what you remember about them. "
+                "Present ALL of the following stored memories conversationally:\n"
+                + "\n".join(f"- {m}" for m in all_memories)
+            )
+        else:
+            context_parts.append(
+                "The user wants to know what you remember about them. "
+                "You don't have any stored memories yet. Let them know and suggest "
+                "they share their skin type, concerns, or preferences."
+            )
 
     if memory_notifications:
         context_parts.append(

@@ -85,5 +85,6 @@ def test_valid_intents():
     assert "product_search" in VALID_INTENTS
     assert "ingredient_check" in VALID_INTENTS
     assert "routine_advice" in VALID_INTENTS
+    assert "memory_query" in VALID_INTENTS
     assert "general_chat" in VALID_INTENTS
-    assert len(VALID_INTENTS) == 4
+    assert len(VALID_INTENTS) == 5

@@ -19,5 +19,6 @@ class AgentState(TypedDict):
     memory_context: list[str]
     active_constraints: list[dict[str, Any]]
     memory_notifications: list[str]
+    memory_enabled: bool
     persona_scores: dict[str, float]
     error: str | None

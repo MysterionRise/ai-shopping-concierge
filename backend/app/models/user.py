@@ -1,4 +1,4 @@
-from sqlalchemy import String
+from sqlalchemy import Boolean, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -13,5 +13,6 @@ class User(TimestampMixin, Base):
     skin_concerns: Mapped[list | None] = mapped_column(JSONB, default=list)
     allergies: Mapped[list | None] = mapped_column(JSONB, default=list)
     preferences: Mapped[dict | None] = mapped_column(JSONB, default=dict)
+    memory_enabled: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
 
     conversations = relationship("Conversation", back_populates="user", lazy="selectin")

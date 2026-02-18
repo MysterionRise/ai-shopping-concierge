@@ -20,6 +20,7 @@ class UserCreate(BaseModel):
     skin_concerns: list[str] = []
     allergies: list[str] = []
     preferences: dict = {}
+    memory_enabled: bool = True
 
 
 class UserUpdate(BaseModel):
@@ -28,6 +29,7 @@ class UserUpdate(BaseModel):
     skin_concerns: list[str] | None = None
     allergies: list[str] | None = None
     preferences: dict | None = None
+    memory_enabled: bool | None = None
 
 
 class UserResponse(BaseModel):
@@ -37,6 +39,7 @@ class UserResponse(BaseModel):
     skin_concerns: list
     allergies: list
     preferences: dict
+    memory_enabled: bool
 
     model_config = {"from_attributes": True}
 
@@ -50,6 +53,7 @@ async def create_user(data: UserCreate, db: AsyncSession = Depends(get_db_sessio
         skin_concerns=data.skin_concerns,
         allergies=data.allergies,
         preferences=data.preferences,
+        memory_enabled=data.memory_enabled,
     )
     db.add(user)
     await db.commit()
@@ -62,6 +66,7 @@ async def create_user(data: UserCreate, db: AsyncSession = Depends(get_db_sessio
         skin_concerns=list(user.skin_concerns or []),
         allergies=list(user.allergies or []),
         preferences=user.preferences or {},
+        memory_enabled=user.memory_enabled,
     )
 
 
@@ -79,6 +84,7 @@ async def get_user(user_id: str, db: AsyncSession = Depends(get_db_session)):
         skin_concerns=list(user.skin_concerns or []),
         allergies=list(user.allergies or []),
         preferences=user.preferences or {},
+        memory_enabled=user.memory_enabled,
     )
 
 
@@ -99,6 +105,8 @@ async def update_user(user_id: str, data: UserUpdate, db: AsyncSession = Depends
         user.allergies = data.allergies  # type: ignore[assignment]
     if data.preferences is not None:
         user.preferences = data.preferences
+    if data.memory_enabled is not None:
+        user.memory_enabled = data.memory_enabled
 
     await db.commit()
     await db.refresh(user)
@@ -110,4 +118,5 @@ async def update_user(user_id: str, data: UserUpdate, db: AsyncSession = Depends
         skin_concerns=list(user.skin_concerns or []),
         allergies=list(user.allergies or []),
         preferences=user.preferences or {},
+        memory_enabled=user.memory_enabled,
     )

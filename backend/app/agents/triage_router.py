@@ -26,6 +26,7 @@ Intents:
 - product_search: User wants product recommendations or is looking for specific products
 - ingredient_check: User asks about specific ingredients, safety, or compatibility
 - routine_advice: User wants skincare routine help, ordering, or regimen advice
+- memory_query: User asks what the assistant knows or remembers about them
 - general_chat: Greetings, thanks, off-topic, or general conversation
 
 Respond with ONLY the intent name, nothing else."""
@@ -38,7 +39,13 @@ class TriageResult(BaseModel):
     )
 
 
-VALID_INTENTS = {"product_search", "ingredient_check", "routine_advice", "general_chat"}
+VALID_INTENTS = {
+    "product_search",
+    "ingredient_check",
+    "routine_advice",
+    "memory_query",
+    "general_chat",
+}
 
 # Patterns for detecting user self-statements
 FACT_PATTERNS = [
@@ -168,7 +175,8 @@ async def triage_router_node(
 
     # Load memory context from store (constraints + relevant facts)
     memory_update = {}
-    if store and user_id:
+    memory_enabled = state.get("memory_enabled", True)
+    if store and user_id and memory_enabled:
         memory_update = await _load_memory_context(store, user_id, user_text)
         # Merge store constraints into hard_constraints for safety agent
         constraint_ingredients = [
@@ -205,7 +213,7 @@ async def triage_router_node(
 
     # Detect and store user facts / constraints
     notifications: list[str] = []
-    if store and user_id:
+    if store and user_id and memory_enabled:
         detected = detect_user_facts(user_text)
         if detected:
             notifications = await _store_detected_facts(store, user_id, detected)

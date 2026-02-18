@@ -10,6 +10,7 @@ export async function getUser(userId: string): Promise<User> {
     skinConcerns: data.skin_concerns as string[],
     allergies: data.allergies as string[],
     preferences: data.preferences as Record<string, unknown>,
+    memoryEnabled: (data.memory_enabled as boolean) ?? true,
   }
 }
 
@@ -33,6 +34,7 @@ export async function createUser(data: {
     skinConcerns: result.skin_concerns as string[],
     allergies: result.allergies as string[],
     preferences: result.preferences as Record<string, unknown>,
+    memoryEnabled: (result.memory_enabled as boolean) ?? true,
   }
 }
 
@@ -44,6 +46,7 @@ export async function updateUser(
     skinConcerns: string[]
     allergies: string[]
     preferences: Record<string, unknown>
+    memoryEnabled: boolean
   }>,
 ): Promise<User> {
   const result = await apiFetch<Record<string, unknown>>(`/users/${userId}`, {
@@ -54,6 +57,7 @@ export async function updateUser(
       skin_concerns: data.skinConcerns,
       allergies: data.allergies,
       preferences: data.preferences,
+      memory_enabled: data.memoryEnabled,
     }),
   })
   return {
@@ -63,5 +67,6 @@ export async function updateUser(
     skinConcerns: result.skin_concerns as string[],
     allergies: result.allergies as string[],
     preferences: result.preferences as Record<string, unknown>,
+    memoryEnabled: (result.memory_enabled as boolean) ?? true,
   }
 }

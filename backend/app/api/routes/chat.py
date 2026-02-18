@@ -61,6 +61,7 @@ async def chat(
     user_profile: dict[str, Any] = {}
     hard_constraints: list[str] = []
     soft_preferences: list[str] = []
+    memory_enabled = True
     user: User | None = None
 
     try:
@@ -73,6 +74,7 @@ async def chat(
                 "skin_concerns": user.skin_concerns or [],
             }
             hard_constraints, soft_preferences = get_user_constraints(user)
+            memory_enabled = user.memory_enabled
     except Exception as e:
         logger.warning("Could not load user profile", error=str(e))
 
@@ -92,6 +94,7 @@ async def chat(
         "memory_context": [],
         "active_constraints": [],
         "memory_notifications": [],
+        "memory_enabled": memory_enabled,
         "persona_scores": {},
         "error": None,
     }
@@ -174,6 +177,7 @@ async def chat_stream(
     user_profile: dict[str, Any] = {}
     hard_constraints: list[str] = []
     soft_preferences: list[str] = []
+    stream_memory_enabled = True
 
     try:
         result = await db.execute(select(User).where(User.id == request.user_id))
@@ -185,6 +189,7 @@ async def chat_stream(
                 "skin_concerns": user.skin_concerns or [],
             }
             hard_constraints, soft_preferences = get_user_constraints(user)
+            stream_memory_enabled = user.memory_enabled
     except Exception as e:
         logger.debug("Could not load user profile for streaming", error=str(e))
 
@@ -202,6 +207,7 @@ async def chat_stream(
         "memory_context": [],
         "active_constraints": [],
         "memory_notifications": [],
+        "memory_enabled": stream_memory_enabled,
         "persona_scores": {},
         "error": None,
     }
@@ -279,7 +285,12 @@ async def chat_stream(
         if last_model_content:
             stream_messages.append({"role": "assistant", "content": last_model_content})
         schedule_extraction(
-            conversation_id, request.user_id, stream_messages, store, delay_seconds=30
+            conversation_id,
+            request.user_id,
+            stream_messages,
+            store,
+            delay_seconds=30,
+            memory_enabled=stream_memory_enabled,
         )
 
     return StreamingResponse(

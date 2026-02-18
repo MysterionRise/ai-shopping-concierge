@@ -36,6 +36,7 @@ export interface User {
   skinConcerns: string[]
   allergies: string[]
   preferences: Record<string, unknown>
+  memoryEnabled: boolean
 }
 
 export interface Memory {

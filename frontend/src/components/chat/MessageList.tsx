@@ -1,17 +1,20 @@
 import { useEffect, useRef } from 'react'
-import { ChatMessage } from '../../types'
+import { ChatMessage, ProductCard } from '../../types'
 import MessageBubble from './MessageBubble'
+import ProductCardComponent from '../products/ProductCard'
 
 interface MessageListProps {
   messages: ChatMessage[]
   isTyping: boolean
   streamingContent: string
+  streamingProducts: ProductCard[]
 }
 
 export default function MessageList({
   messages,
   isTyping,
   streamingContent,
+  streamingProducts,
 }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -40,6 +43,15 @@ export default function MessageList({
           <div className="flex justify-start mb-4">
             <div className="max-w-[80%] rounded-2xl px-4 py-3 bg-white border border-gray-200 text-gray-800">
               <p className="text-sm">{streamingContent}</p>
+              {streamingProducts.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+                    {streamingProducts.map((product) => (
+                      <ProductCardComponent key={product.id} product={product} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -1,4 +1,4 @@
-import { ChatResponse } from '../types'
+import { ChatResponse, ProductCard } from '../types'
 import { apiFetch, apiStreamUrl } from './client'
 
 export async function sendMessage(
@@ -16,6 +16,23 @@ export async function sendMessage(
   })
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function parseBackendProduct(p: any): ProductCard {
+  return {
+    id: p.id,
+    name: p.name,
+    brand: p.brand || null,
+    ingredients: p.key_ingredients || p.ingredients || [],
+    safetyScore: p.safety_score ?? null,
+    imageUrl: p.image_url || null,
+    fitReason: p.fit_reasons?.[0],
+    fitReasons: p.fit_reasons || [],
+    safetyBadge: p.safety_badge || undefined,
+    categories: p.categories || [],
+    dataCompleteness: p.data_completeness,
+  }
+}
+
 export function createSSEConnection(
   message: string,
   userId: string,
@@ -23,6 +40,7 @@ export function createSSEConnection(
   onToken: (token: string) => void,
   onDone: (conversationId: string) => void,
   onError: (error: string) => void,
+  onProducts?: (products: ProductCard[]) => void,
 ): AbortController {
   const controller = new AbortController()
 
@@ -64,7 +82,10 @@ export function createSSEConnection(
             try {
               const data = JSON.parse(line.slice(6))
               if (data.type === 'token') onToken(data.content)
-              else if (data.type === 'done') onDone(data.conversation_id || '')
+              else if (data.type === 'products' && onProducts) {
+                const products = (data.products || []).map(parseBackendProduct)
+                onProducts(products)
+              } else if (data.type === 'done') onDone(data.conversation_id || '')
               else if (data.type === 'error') onError(data.content)
             } catch {
               // Skip malformed SSE data

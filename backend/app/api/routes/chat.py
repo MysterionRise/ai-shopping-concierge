@@ -35,6 +35,7 @@ class ChatResponse(BaseModel):
     intent: str
     safety_violations: list[dict] = []
     product_count: int = 0
+    products: list[dict] = []
 
 
 @router.post("/chat")
@@ -138,12 +139,14 @@ async def chat(
     except Exception as e:
         logger.warning("Failed to persist conversation", error=str(e))
 
+    product_results = graph_result.get("product_results", [])
     return ChatResponse(
         response=response_text,
         conversation_id=conversation_id,
         intent=graph_result.get("current_intent", "general_chat"),
         safety_violations=graph_result.get("safety_violations", []),
-        product_count=len(graph_result.get("product_results", [])),
+        product_count=len(product_results),
+        products=product_results,
     )
 
 
@@ -200,24 +203,35 @@ async def chat_stream(
 
     async def event_stream():
         graph = raw_request.app.state.graph
+        config = {"configurable": {"thread_id": conversation_id}}
         last_model_content = ""
+        product_results: list[dict] = []
         try:
             async with asyncio.timeout(settings.llm_timeout_seconds):
                 async for event in graph.astream_events(
                     initial_state,
-                    config={"configurable": {"thread_id": conversation_id}},
+                    config=config,
                     version="v2",
                 ):
                     if await raw_request.is_disconnected():
                         logger.info(
-                            "Client disconnected during stream", conversation_id=conversation_id
+                            "Client disconnected during stream",
+                            conversation_id=conversation_id,
                         )
                         return
 
                     kind = event.get("event", "")
                     metadata = event.get("metadata", {})
+                    node = metadata.get("langgraph_node", "")
+
+                    # Capture product results from product_discovery node
+                    if kind == "on_chain_end" and node == "product_discovery":
+                        output = event.get("data", {}).get("output", {})
+                        if isinstance(output, dict):
+                            product_results = output.get("product_results", [])
+
                     # Only stream tokens from the response_synth node
-                    is_response = metadata.get("langgraph_node") == "response_synth"
+                    is_response = node == "response_synth"
                     if kind == "on_chat_model_stream" and is_response:
                         chunk = event.get("data", {}).get("chunk")
                         if chunk and hasattr(chunk, "content") and chunk.content:
@@ -225,8 +239,6 @@ async def chat_stream(
                             evt = json.dumps({"type": "token", "content": chunk.content})
                             yield f"data: {evt}\n\n"
                     elif kind == "on_chat_model_end" and is_response:
-                        # For models that don't stream (like DemoChatModel),
-                        # emit the full response as a single token
                         if not last_model_content:
                             output = event.get("data", {}).get("output")
                             if output and hasattr(output, "content") and output.content:
@@ -237,6 +249,12 @@ async def chat_stream(
                                 )
                                 evt = json.dumps({"type": "token", "content": content})
                                 yield f"data: {evt}\n\n"
+
+            # Emit product results after text streaming completes
+            if product_results:
+                evt = json.dumps({"type": "products", "products": product_results})
+                yield f"data: {evt}\n\n"
+
         except TimeoutError:
             logger.warning("LLM timeout during stream", conversation_id=conversation_id)
             msg = "Response timed out. Please try again."

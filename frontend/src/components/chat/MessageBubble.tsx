@@ -1,5 +1,6 @@
 import ReactMarkdown from 'react-markdown'
 import { ChatMessage } from '../../types'
+import ProductCard from '../products/ProductCard'
 
 interface MessageBubbleProps {
   message: ChatMessage
@@ -22,6 +23,15 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
         ) : (
           <div className="text-sm prose prose-sm max-w-none">
             <ReactMarkdown>{message.content}</ReactMarkdown>
+          </div>
+        )}
+        {!isUser && message.products && message.products.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
+              {message.products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
           </div>
         )}
       </div>

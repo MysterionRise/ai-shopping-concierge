@@ -16,6 +16,10 @@ export interface ProductCard {
   safetyScore: number | null
   imageUrl: string | null
   fitReason?: string
+  fitReasons?: string[]
+  safetyBadge?: 'safe' | 'unverified'
+  categories?: string[]
+  dataCompleteness?: number
 }
 
 export interface SafetyViolation {
@@ -63,4 +67,5 @@ export interface ChatResponse {
   intent: string
   safety_violations: SafetyViolation[]
   product_count: number
+  products: Record<string, unknown>[]
 }

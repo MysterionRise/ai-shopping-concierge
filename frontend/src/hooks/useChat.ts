@@ -6,6 +6,7 @@ export function useChat() {
     messages,
     isTyping,
     streamingContent,
+    streamingProducts,
     sendChatMessage,
     sendStreamingMessage,
     clearMessages,
@@ -26,6 +27,7 @@ export function useChat() {
     messages,
     isTyping,
     streamingContent,
+    streamingProducts,
     sendMessage,
     clearMessages,
   }

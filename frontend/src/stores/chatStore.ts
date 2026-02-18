@@ -1,12 +1,13 @@
 import { create } from 'zustand'
-import { ChatMessage } from '../types'
-import { sendMessage, createSSEConnection } from '../api/chat'
+import { ChatMessage, ProductCard } from '../types'
+import { sendMessage, createSSEConnection, parseBackendProduct } from '../api/chat'
 
 interface ChatState {
   messages: ChatMessage[]
   isTyping: boolean
   currentConversationId: string | undefined
   streamingContent: string
+  streamingProducts: ProductCard[]
   userId: string
 
   setUserId: (id: string) => void
@@ -22,6 +23,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isTyping: false,
   currentConversationId: undefined,
   streamingContent: '',
+  streamingProducts: [],
   userId: 'default-user',
 
   setUserId: (id) => set({ userId: id }),
@@ -47,10 +49,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       const response = await sendMessage(text, userId, currentConversationId)
 
+      const products = (response.products || []).map(parseBackendProduct)
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
         content: response.response,
+        products: products.length > 0 ? products : undefined,
         timestamp: new Date().toISOString(),
       }
 
@@ -87,6 +91,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       messages: [...state.messages, userMessage],
       isTyping: true,
       streamingContent: '',
+      streamingProducts: [],
     }))
 
     createSSEConnection(
@@ -100,16 +105,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
       },
       (conversationId) => {
         const content = get().streamingContent
+        const products = get().streamingProducts
         const assistantMessage: ChatMessage = {
           id: crypto.randomUUID(),
           role: 'assistant',
           content,
+          products: products.length > 0 ? products : undefined,
           timestamp: new Date().toISOString(),
         }
         set((state) => ({
           messages: [...state.messages, assistantMessage],
           isTyping: false,
           streamingContent: '',
+          streamingProducts: [],
           currentConversationId: conversationId || state.currentConversationId,
         }))
       },
@@ -124,7 +132,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
           messages: [...state.messages, errorMessage],
           isTyping: false,
           streamingContent: '',
+          streamingProducts: [],
         }))
+      },
+      (products) => {
+        set({ streamingProducts: products })
       },
     )
   },
@@ -134,5 +146,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   clearMessages: () =>
-    set({ messages: [], currentConversationId: undefined, streamingContent: '' }),
+    set({
+      messages: [],
+      currentConversationId: undefined,
+      streamingContent: '',
+      streamingProducts: [],
+    }),
 }))

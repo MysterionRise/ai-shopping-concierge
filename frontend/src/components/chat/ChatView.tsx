@@ -3,7 +3,7 @@ import ChatInput from './ChatInput'
 import MessageList from './MessageList'
 
 export default function ChatView() {
-  const { messages, isTyping, streamingContent, sendMessage } = useChat()
+  const { messages, isTyping, streamingContent, streamingProducts, sendMessage } = useChat()
 
   return (
     <div className="h-full flex flex-col bg-gray-50">
@@ -11,8 +11,9 @@ export default function ChatView() {
         messages={messages}
         isTyping={isTyping}
         streamingContent={streamingContent}
+        streamingProducts={streamingProducts}
       />
-      <ChatInput onSend={(text) => sendMessage(text)} disabled={isTyping} />
+      <ChatInput onSend={(text) => sendMessage(text, true)} disabled={isTyping} />
     </div>
   )
 }

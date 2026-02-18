@@ -3,7 +3,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel
 
 from app.agents.state import AgentState
-from app.catalog.product_service import search_products_safe
+from app.catalog.product_service import hybrid_search
 from app.core.database import async_session_factory
 from app.core.llm import get_llm
 
@@ -39,6 +39,38 @@ def parse_search_intent(text: str) -> SearchIntent:
             elif key == "skin_type":
                 intent.skin_type = value
     return intent
+
+
+def _generate_fit_reasons(intent: SearchIntent, product: dict) -> list[str]:
+    """Generate human-readable fit reasons based on search intent and product."""
+    reasons = []
+    categories = [c.lower() for c in product.get("categories", [])]
+    name_lower = (product.get("name") or "").lower()
+
+    if intent.product_type != "unknown":
+        pt = intent.product_type.lower()
+        if any(pt in c for c in categories) or pt in name_lower:
+            reasons.append(f"Matches your search for {intent.product_type}")
+
+    if intent.skin_type != "unknown":
+        st = intent.skin_type.lower()
+        if st in name_lower or any(st in c for c in categories):
+            reasons.append(f"Suitable for {intent.skin_type} skin")
+
+    if intent.properties != "unknown":
+        props = intent.properties.lower()
+        ingredients = product.get("key_ingredients", [])
+        ing_text = " ".join(i.lower() for i in ingredients)
+        if any(p.strip() in ing_text or p.strip() in name_lower for p in props.split(",")):
+            reasons.append(f"Contains {intent.properties}")
+
+    if product.get("safety_badge") == "safe":
+        reasons.append("Passed safety checks")
+
+    if not reasons:
+        reasons.append("Relevant to your search")
+
+    return reasons
 
 
 async def product_discovery_node(state: AgentState) -> dict:
@@ -81,17 +113,22 @@ async def product_discovery_node(state: AgentState) -> dict:
 
     logger.info("Search query built", query=search_query)
 
-    # Search products in DB with allergen pre-filtering
+    # Hybrid search: keyword + vector, with allergen pre-filtering
     hard_constraints = state.get("hard_constraints", [])
     product_results: list[dict] = []
     try:
         async with async_session_factory() as db:
-            product_results = await search_products_safe(
+            product_results = await hybrid_search(
                 db,
                 query=search_query,
                 allergens=hard_constraints if hard_constraints else None,
                 limit=10,
             )
+
+        # Add fit reasons to each result
+        for result in product_results:
+            result["fit_reasons"] = _generate_fit_reasons(intent, result)
+
         logger.info("Products found", count=len(product_results))
     except Exception as e:
         logger.error("Product search failed", error=str(e))

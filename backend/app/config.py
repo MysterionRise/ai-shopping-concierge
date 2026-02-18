@@ -28,6 +28,9 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3000"]
     llm_timeout_seconds: int = 60
 
+    # Embeddings (optional — enables vector search in LangMem store)
+    openai_api_key: str = ""
+
     # LangSmith (optional)
     langsmith_api_key: str = ""
     langsmith_project: str = "beauty-concierge"

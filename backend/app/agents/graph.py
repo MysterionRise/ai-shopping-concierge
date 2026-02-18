@@ -49,8 +49,8 @@ def build_graph() -> StateGraph:
     return graph
 
 
-def compile_graph(checkpointer=None):
-    """Compile graph with given checkpointer. Falls back to MemorySaver."""
+def compile_graph(checkpointer=None, store=None):
+    """Compile graph with given checkpointer and store. Falls back to MemorySaver."""
     if checkpointer is None:
         checkpointer = MemorySaver()
-    return build_graph().compile(checkpointer=checkpointer)
+    return build_graph().compile(checkpointer=checkpointer, store=store)

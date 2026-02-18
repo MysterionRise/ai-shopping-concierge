@@ -28,21 +28,41 @@ async def lifespan(app: FastAPI):
 
     # Initialize LangGraph checkpointer
     checkpointer_cm = None
+    checkpointer = None
     try:
         from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
         checkpointer_cm = AsyncPostgresSaver.from_conn_string(settings.checkpoint_db_url)
         checkpointer = await checkpointer_cm.__aenter__()
         await checkpointer.setup()
-        app.state.graph = compile_graph(checkpointer)
         logger.info("LangGraph checkpointer: AsyncPostgresSaver (Postgres)")
     except Exception as e:
         logger.warning("Postgres checkpointer failed, using MemorySaver", error=str(e))
-        app.state.graph = compile_graph()
         checkpointer_cm = None
+
+    # Initialize LangMem store (AsyncPostgresStore for long-term memory)
+    store_cm = None
+    store = None
+    try:
+        from app.memory.langmem_config import get_store_context
+
+        store_cm = get_store_context()
+        store = await store_cm.__aenter__()
+        await store.setup()
+        app.state.store = store
+        logger.info("LangMem store: AsyncPostgresStore (Postgres)")
+    except Exception as e:
+        logger.warning("LangMem store failed, memories disabled", error=str(e))
+        app.state.store = None
+        store_cm = None
+
+    # Compile graph with checkpointer and store
+    app.state.graph = compile_graph(checkpointer, store=store)
 
     yield
 
+    if store_cm is not None:
+        await store_cm.__aexit__(None, None, None)
     if checkpointer_cm is not None:
         await checkpointer_cm.__aexit__(None, None, None)
 

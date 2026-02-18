@@ -51,16 +51,16 @@ export interface PersonaScores {
 }
 
 export interface PersonaEntry {
-  conversationId: string
-  messageId: string
+  conversation_id: string
+  message_id: string
   scores: PersonaScores
   timestamp: string
 }
 
 export interface ChatResponse {
   response: string
-  conversationId: string
+  conversation_id: string
   intent: string
-  safetyViolations: SafetyViolation[]
-  productCount: number
+  safety_violations: SafetyViolation[]
+  product_count: number
 }

@@ -37,7 +37,8 @@ async def triage_router_node(state: AgentState) -> dict:
         return {"current_intent": "general_chat"}
 
     last_message = messages[-1]
-    user_text = last_message.content if hasattr(last_message, "content") else str(last_message)
+    raw_content = last_message.content if hasattr(last_message, "content") else str(last_message)
+    user_text = raw_content if isinstance(raw_content, str) else str(raw_content)
 
     llm = get_llm(temperature=0)
 

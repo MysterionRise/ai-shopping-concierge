@@ -4,7 +4,7 @@ import structlog
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
-from app.core.redis import get_redis_client
+from app.dependencies import get_redis
 from app.persona.monitor import PersonaMonitor
 
 logger = structlog.get_logger()
@@ -12,8 +12,8 @@ logger = structlog.get_logger()
 router = APIRouter(prefix="/persona", tags=["persona"])
 
 
-def get_persona_monitor() -> PersonaMonitor:
-    return PersonaMonitor(get_redis_client())
+async def get_persona_monitor(redis=Depends(get_redis)) -> PersonaMonitor:
+    return PersonaMonitor(redis)
 
 
 @router.get("/scores")
@@ -42,11 +42,10 @@ async def get_alerts(
 
 
 @router.get("/stream")
-async def persona_stream(conversation_id: str):
+async def persona_stream(conversation_id: str, redis=Depends(get_redis)):
     """SSE stream for real-time persona score updates."""
 
     async def event_stream():
-        redis = get_redis_client()
         pubsub = redis.pubsub()
         channel = f"persona:{conversation_id}"
 

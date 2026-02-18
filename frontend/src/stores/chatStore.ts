@@ -57,7 +57,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set((state) => ({
         messages: [...state.messages, assistantMessage],
         isTyping: false,
-        currentConversationId: response.conversationId,
+        currentConversationId: response.conversation_id,
       }))
     } catch {
       set({ isTyping: false })

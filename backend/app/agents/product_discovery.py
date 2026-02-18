@@ -3,6 +3,8 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel
 
 from app.agents.state import AgentState
+from app.catalog.product_service import search_products_safe
+from app.core.database import async_session_factory
 from app.core.llm import get_llm
 
 logger = structlog.get_logger()
@@ -48,6 +50,8 @@ async def product_discovery_node(state: AgentState) -> dict:
 
     last_message = messages[-1]
     user_text = last_message.content if hasattr(last_message, "content") else str(last_message)
+    if not isinstance(user_text, str):
+        user_text = str(user_text)
 
     llm = get_llm(temperature=0)
 
@@ -77,9 +81,22 @@ async def product_discovery_node(state: AgentState) -> dict:
 
     logger.info("Search query built", query=search_query)
 
-    # Product search will be done via ChromaDB or DB in the graph orchestrator
-    # For now, store the query and intent so downstream nodes can use it
+    # Search products in DB with allergen pre-filtering
+    hard_constraints = state.get("hard_constraints", [])
+    product_results: list[dict] = []
+    try:
+        async with async_session_factory() as db:
+            product_results = await search_products_safe(
+                db,
+                query=search_query,
+                allergens=hard_constraints if hard_constraints else None,
+                limit=10,
+            )
+        logger.info("Products found", count=len(product_results))
+    except Exception as e:
+        logger.error("Product search failed", error=str(e))
+
     return {
-        "product_results": [],  # Will be populated by graph orchestrator with DB/vector results
+        "product_results": product_results,
         "current_intent": state.get("current_intent", "product_search"),
     }

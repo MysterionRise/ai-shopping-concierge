@@ -6,7 +6,7 @@ Scores are stored in Redis for fast writes, periodically flushed to Postgres.
 
 import asyncio
 import json
-from datetime import datetime
+from datetime import UTC, datetime
 
 import redis.asyncio as aioredis
 import structlog
@@ -41,7 +41,7 @@ class PersonaMonitor:
         response: str,
         conversation_id: str,
         message_id: str,
-    ):
+    ) -> None:
         """Fire-and-forget persona evaluation."""
         if not settings.persona_enabled:
             return
@@ -54,14 +54,14 @@ class PersonaMonitor:
         response: str,
         conversation_id: str,
         message_id: str,
-    ):
+    ) -> None:
         try:
             extractor = self._get_extractor()
             if not extractor:
                 return
 
             # Run in executor to avoid blocking event loop
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             scores = await loop.run_in_executor(
                 None,
                 extractor.score_response,
@@ -74,7 +74,7 @@ class PersonaMonitor:
                 "conversation_id": conversation_id,
                 "message_id": message_id,
                 "scores": scores,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
 
             key = f"{REDIS_PERSONA_PREFIX}{conversation_id}:{message_id}"

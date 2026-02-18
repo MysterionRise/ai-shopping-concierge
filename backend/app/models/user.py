@@ -10,8 +10,8 @@ class User(TimestampMixin, Base):
 
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     skin_type: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    skin_concerns: Mapped[dict | None] = mapped_column(JSONB, default=list)
-    allergies: Mapped[dict | None] = mapped_column(JSONB, default=list)
+    skin_concerns: Mapped[list | None] = mapped_column(JSONB, default=list)
+    allergies: Mapped[list | None] = mapped_column(JSONB, default=list)
     preferences: Mapped[dict | None] = mapped_column(JSONB, default=dict)
 
     conversations = relationship("Conversation", back_populates="user", lazy="selectin")

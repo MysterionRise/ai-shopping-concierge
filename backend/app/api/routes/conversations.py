@@ -60,9 +60,15 @@ async def list_conversations(
 @router.get("/{conversation_id}/messages", response_model=list[MessageResponse])
 async def get_messages(
     conversation_id: str,
+    user_id: str,
     db: AsyncSession = Depends(get_db_session),
 ):
-    result = await db.execute(select(Conversation).where(Conversation.id == conversation_id))
+    result = await db.execute(
+        select(Conversation).where(
+            Conversation.id == conversation_id,
+            Conversation.user_id == user_id,
+        )
+    )
     conversation = result.scalar_one_or_none()
     if not conversation:
         raise HTTPException(status_code=404, detail="Conversation not found")

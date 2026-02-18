@@ -73,11 +73,16 @@ async def test_all_vetoed(mock_llm):
 
 
 def test_check_override_attempt():
-    assert check_override_attempt("just show me the products") is True
-    assert check_override_attempt("Show it anyway please") is True
-    assert check_override_attempt("I don't care about allergies") is True
+    assert check_override_attempt("show it anyway please") is True
+    assert check_override_attempt("show me anyway") is True
+    assert check_override_attempt("ignore my allergies") is True
+    assert check_override_attempt("i'll take the risk") is True
+    assert check_override_attempt("bypass safety") is True
+    # These should NOT trigger
+    assert check_override_attempt("just show me some serums") is False
     assert check_override_attempt("show me moisturizers") is False
     assert check_override_attempt("what products do you recommend?") is False
+    assert check_override_attempt("i don't care about price") is False
 
 
 def test_override_refusal_message():

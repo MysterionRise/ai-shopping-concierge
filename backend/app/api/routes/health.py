@@ -1,5 +1,6 @@
 import structlog
 from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -32,4 +33,4 @@ async def health_check(
         checks["status"] = "degraded"
 
     status_code = 200 if checks["status"] == "healthy" else 503
-    return checks if status_code == 200 else checks
+    return JSONResponse(content=checks, status_code=status_code)

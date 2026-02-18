@@ -15,10 +15,11 @@ async def search_products(
 ) -> list[Product]:
     stmt = select(Product)
     if query:
+        escaped = query.replace("%", r"\%").replace("_", r"\_")
         stmt = stmt.where(
-            Product.name.ilike(f"%{query}%")
-            | Product.brand.ilike(f"%{query}%")
-            | Product.ingredients_text.ilike(f"%{query}%")
+            Product.name.ilike(f"%{escaped}%")
+            | Product.brand.ilike(f"%{escaped}%")
+            | Product.ingredients_text.ilike(f"%{escaped}%")
         )
     stmt = stmt.order_by(Product.safety_score.desc().nullslast()).limit(limit)
     result = await db.execute(stmt)

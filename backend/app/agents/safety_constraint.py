@@ -119,12 +119,17 @@ async def safety_constraint_node(state: AgentState) -> dict:
 def check_override_attempt(message: str) -> bool:
     override_phrases = [
         "show it anyway",
-        "just show me",
-        "i don't care",
         "show me anyway",
         "ignore my allergies",
-        "override",
+        "ignore my allergy",
+        "override safety",
+        "override allergy",
         "i'll take the risk",
+        "don't care about allergies",
+        "don't care about safety",
+        "skip the safety",
+        "bypass safety",
+        "bypass allergy",
     ]
     lower = message.lower()
     return any(phrase in lower for phrase in override_phrases)

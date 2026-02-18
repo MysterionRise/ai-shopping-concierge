@@ -36,7 +36,7 @@ class DemoChatModel(BaseChatModel):
         run_manager: Any = None,
         **kwargs: Any,
     ) -> ChatResult:
-        return self._generate(messages, stop, **kwargs)
+        return self._generate(messages, stop, run_manager=run_manager, **kwargs)
 
     def _pick_response(self, messages: list[BaseMessage]) -> str:
         system = ""

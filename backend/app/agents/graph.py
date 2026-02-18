@@ -1,4 +1,5 @@
 import structlog
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 
 from app.agents.product_discovery import product_discovery_node
@@ -13,11 +14,7 @@ logger = structlog.get_logger()
 def route_after_triage(state: AgentState) -> str:
     intent = state.get("current_intent", "general_chat")
     if intent in ("product_search", "ingredient_check", "routine_advice"):
-        return "safety_pre_filter"
-    return "response_synth"
-
-
-def route_after_safety_post(state: AgentState) -> str:
+        return "product_discovery"
     return "response_synth"
 
 
@@ -26,7 +23,6 @@ def build_graph() -> StateGraph:
 
     # Nodes
     graph.add_node("triage_router", triage_router_node)
-    graph.add_node("safety_pre_filter", safety_constraint_node)
     graph.add_node("product_discovery", product_discovery_node)
     graph.add_node("safety_post_validate", safety_constraint_node)
     graph.add_node("response_synth", response_synth_node)
@@ -39,13 +35,12 @@ def build_graph() -> StateGraph:
         "triage_router",
         route_after_triage,
         {
-            "safety_pre_filter": "safety_pre_filter",
+            "product_discovery": "product_discovery",
             "response_synth": "response_synth",
         },
     )
 
-    # Safety pre-filter -> product discovery -> safety post-validate -> response synth
-    graph.add_edge("safety_pre_filter", "product_discovery")
+    # Product discovery -> safety post-validate -> response synth
     graph.add_edge("product_discovery", "safety_post_validate")
     graph.add_edge("safety_post_validate", "response_synth")
 
@@ -54,6 +49,10 @@ def build_graph() -> StateGraph:
     return graph
 
 
+# Module-level singleton: compile graph once, reuse across requests
+_checkpointer = MemorySaver()
+_compiled_graph = build_graph().compile(checkpointer=_checkpointer)
+
+
 def get_compiled_graph():
-    graph = build_graph()
-    return graph.compile()
+    return _compiled_graph

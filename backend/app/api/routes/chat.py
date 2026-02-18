@@ -13,7 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agents.graph import get_compiled_graph
 from app.agents.safety_constraint import OVERRIDE_REFUSAL, check_override_attempt
 from app.dependencies import get_db_session
-from app.memory.constraint_store import get_hard_constraints, get_soft_preferences
+from app.memory.constraint_store import get_user_constraints
+from app.models.conversation import Conversation, Message
 from app.models.user import User
 
 logger = structlog.get_logger()
@@ -44,7 +45,7 @@ async def chat(
 
     conversation_id = request.conversation_id or str(uuid.uuid4())
 
-    # Check for safety override attempts
+    # Check for safety override attempts (only when context suggests override)
     if check_override_attempt(request.message):
         return ChatResponse(
             response=OVERRIDE_REFUSAL,
@@ -52,10 +53,11 @@ async def chat(
             intent="safety_override_blocked",
         )
 
-    # Load user profile and constraints
+    # Load user profile and constraints in a single query
     user_profile: dict[str, Any] = {}
-    hard_constraints = []
-    soft_preferences = []
+    hard_constraints: list[str] = []
+    soft_preferences: list[str] = []
+    user: User | None = None
 
     try:
         result = await db.execute(select(User).where(User.id == request.user_id))
@@ -66,8 +68,7 @@ async def chat(
                 "skin_type": user.skin_type,
                 "skin_concerns": user.skin_concerns or [],
             }
-            hard_constraints = await get_hard_constraints(db, request.user_id)
-            soft_preferences = await get_soft_preferences(db, request.user_id)
+            hard_constraints, soft_preferences = get_user_constraints(user)
     except Exception as e:
         logger.warning("Could not load user profile", error=str(e))
 
@@ -89,20 +90,58 @@ async def chat(
         "error": None,
     }
 
-    result = await graph.ainvoke(
+    graph_result = await graph.ainvoke(
         initial_state,
         config={"configurable": {"thread_id": conversation_id}},
     )
 
-    ai_messages = [m for m in result["messages"] if hasattr(m, "type") and m.type == "ai"]
+    ai_messages = [m for m in graph_result["messages"] if hasattr(m, "type") and m.type == "ai"]
     response_text = ai_messages[-1].content if ai_messages else "I'm not sure how to respond."
+
+    # Persist conversation and messages to DB
+    try:
+        if user:
+            # Find or create conversation
+            conv_result = await db.execute(
+                select(Conversation).where(Conversation.langgraph_thread_id == conversation_id)
+            )
+            conversation = conv_result.scalar_one_or_none()
+            if not conversation:
+                conversation = Conversation(
+                    user_id=user.id,
+                    langgraph_thread_id=conversation_id,
+                    title=request.message[:100],
+                )
+                db.add(conversation)
+                await db.flush()
+
+            # Save user message
+            db.add(
+                Message(
+                    conversation_id=conversation.id,
+                    role="user",
+                    content=request.message,
+                )
+            )
+            # Save assistant message
+            db.add(
+                Message(
+                    conversation_id=conversation.id,
+                    role="assistant",
+                    content=response_text,
+                    agent_name=graph_result.get("current_intent", "general_chat"),
+                )
+            )
+            await db.commit()
+    except Exception as e:
+        logger.warning("Failed to persist conversation", error=str(e))
 
     return ChatResponse(
         response=response_text,
         conversation_id=conversation_id,
-        intent=result.get("current_intent", "general_chat"),
-        safety_violations=result.get("safety_violations", []),
-        product_count=len(result.get("product_results", [])),
+        intent=graph_result.get("current_intent", "general_chat"),
+        safety_violations=graph_result.get("safety_violations", []),
+        product_count=len(graph_result.get("product_results", [])),
     )
 
 
@@ -124,8 +163,8 @@ async def chat_stream(
     conversation_id = request.conversation_id or str(uuid.uuid4())
 
     user_profile: dict[str, Any] = {}
-    hard_constraints = []
-    soft_preferences = []
+    hard_constraints: list[str] = []
+    soft_preferences: list[str] = []
 
     try:
         result = await db.execute(select(User).where(User.id == request.user_id))
@@ -136,8 +175,7 @@ async def chat_stream(
                 "skin_type": user.skin_type,
                 "skin_concerns": user.skin_concerns or [],
             }
-            hard_constraints = await get_hard_constraints(db, request.user_id)
-            soft_preferences = await get_soft_preferences(db, request.user_id)
+            hard_constraints, soft_preferences = get_user_constraints(user)
     except Exception as e:
         logger.debug("Could not load user profile for streaming", error=str(e))
 
@@ -159,6 +197,7 @@ async def chat_stream(
 
     async def event_stream():
         graph = get_compiled_graph()
+        last_model_content = ""
         try:
             async for event in graph.astream_events(
                 initial_state,
@@ -166,10 +205,26 @@ async def chat_stream(
                 version="v2",
             ):
                 kind = event.get("event", "")
-                if kind == "on_chat_model_stream":
+                metadata = event.get("metadata", {})
+                # Only stream tokens from the response_synth node
+                is_response = metadata.get("langgraph_node") == "response_synth"
+                if kind == "on_chat_model_stream" and is_response:
                     chunk = event.get("data", {}).get("chunk")
                     if chunk and hasattr(chunk, "content") and chunk.content:
+                        last_model_content += chunk.content
                         yield f"data: {json.dumps({'type': 'token', 'content': chunk.content})}\n\n"
+                elif kind == "on_chat_model_end" and is_response:
+                    # For models that don't stream (like DemoChatModel),
+                    # emit the full response as a single token
+                    if not last_model_content:
+                        output = event.get("data", {}).get("output")
+                        if output and hasattr(output, "content") and output.content:
+                            content = (
+                                output.content
+                                if isinstance(output.content, str)
+                                else str(output.content)
+                            )
+                            yield f"data: {json.dumps({'type': 'token', 'content': content})}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
 

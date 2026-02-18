@@ -1,8 +1,10 @@
 import structlog
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.redis import get_redis_client
+from app.dependencies import get_db_session, get_redis
+from app.memory.constraint_store import add_constraint
 from app.memory.memory_manager import MemoryManager
 
 logger = structlog.get_logger()
@@ -23,8 +25,8 @@ class ConstraintCreate(BaseModel):
     is_hard: bool = True
 
 
-def get_memory_manager() -> MemoryManager:
-    return MemoryManager(get_redis_client())
+async def get_memory_manager(redis=Depends(get_redis)) -> MemoryManager:
+    return MemoryManager(redis)
 
 
 @router.get("", response_model=list[MemoryResponse])
@@ -76,10 +78,11 @@ async def get_constraints(
 
 
 @router.post("/constraints")
-async def add_constraint(
+async def add_user_constraint(
     user_id: str,
     data: ConstraintCreate,
     manager: MemoryManager = Depends(get_memory_manager),
+    db: AsyncSession = Depends(get_db_session),
 ):
     category = "constraints" if data.is_hard else "preferences"
     memory_id = await manager.store_memory(
@@ -88,4 +91,6 @@ async def add_constraint(
         data.constraint,
         metadata={"type": "user_defined", "is_hard": data.is_hard},
     )
+    # Also persist to Postgres User.allergies/preferences so the safety agent can use it
+    await add_constraint(db, user_id, data.constraint, is_hard=data.is_hard)
     return {"id": memory_id, "status": "created"}

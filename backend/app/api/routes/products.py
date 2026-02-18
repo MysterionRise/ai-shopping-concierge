@@ -32,9 +32,14 @@ async def search_products(
     limit: int = 10,
     db: AsyncSession = Depends(get_db_session),
 ) -> list[ProductResponse]:
+    limit = max(1, min(limit, 100))
     stmt = select(Product)
     if q:
-        stmt = stmt.where(Product.name.ilike(f"%{q}%") | Product.brand.ilike(f"%{q}%"))
+        # Escape ILIKE wildcards in user input
+        escaped_q = q.replace("%", r"\%").replace("_", r"\_")
+        stmt = stmt.where(
+            Product.name.ilike(f"%{escaped_q}%") | Product.brand.ilike(f"%{escaped_q}%")
+        )
     stmt = stmt.order_by(Product.safety_score.desc().nullslast()).limit(limit)
     result = await db.execute(stmt)
     products = result.scalars().all()

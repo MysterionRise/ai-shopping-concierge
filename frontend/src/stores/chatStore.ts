@@ -59,8 +59,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
         isTyping: false,
         currentConversationId: response.conversation_id,
       }))
-    } catch {
-      set({ isTyping: false })
+    } catch (err) {
+      const errorMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: `Sorry, something went wrong: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        timestamp: new Date().toISOString(),
+      }
+      set((state) => ({
+        messages: [...state.messages, errorMessage],
+        isTyping: false,
+      }))
     }
   },
 
@@ -104,8 +113,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
           currentConversationId: conversationId || state.currentConversationId,
         }))
       },
-      (_error) => {
-        set({ isTyping: false, streamingContent: '' })
+      (error) => {
+        const errorMessage: ChatMessage = {
+          id: crypto.randomUUID(),
+          role: 'assistant',
+          content: `Sorry, something went wrong: ${error}`,
+          timestamp: new Date().toISOString(),
+        }
+        set((state) => ({
+          messages: [...state.messages, errorMessage],
+          isTyping: false,
+          streamingContent: '',
+        }))
       },
     )
   },

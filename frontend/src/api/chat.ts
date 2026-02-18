@@ -37,8 +37,16 @@ export function createSSEConnection(
     signal: controller.signal,
   })
     .then(async (response) => {
+      if (!response.ok) {
+        onError(`Server error: ${response.status} ${response.statusText}`)
+        return
+      }
+
       const reader = response.body?.getReader()
-      if (!reader) return
+      if (!reader) {
+        onError('No response body')
+        return
+      }
 
       const decoder = new TextDecoder()
       let buffer = ''
@@ -66,7 +74,12 @@ export function createSSEConnection(
       }
     })
     .catch((err) => {
-      if (err.name !== 'AbortError') onError(err.message)
+      if (err.name === 'AbortError') return
+      if (err.message === 'Failed to fetch' || err.name === 'TypeError') {
+        onError('Connection lost. Please check your network and try again.')
+      } else {
+        onError(err.message)
+      }
     })
 
   return controller

@@ -1,9 +1,10 @@
+import asyncio
 import json
 import uuid
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, Depends, Request, WebSocket
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel
@@ -11,6 +12,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.safety_constraint import OVERRIDE_REFUSAL, check_override_attempt
+from app.config import settings
 from app.dependencies import get_db_session
 from app.memory.constraint_store import get_user_constraints
 from app.models.conversation import Conversation, Message
@@ -200,42 +202,57 @@ async def chat_stream(
         graph = raw_request.app.state.graph
         last_model_content = ""
         try:
-            async for event in graph.astream_events(
-                initial_state,
-                config={"configurable": {"thread_id": conversation_id}},
-                version="v2",
-            ):
-                kind = event.get("event", "")
-                metadata = event.get("metadata", {})
-                # Only stream tokens from the response_synth node
-                is_response = metadata.get("langgraph_node") == "response_synth"
-                if kind == "on_chat_model_stream" and is_response:
-                    chunk = event.get("data", {}).get("chunk")
-                    if chunk and hasattr(chunk, "content") and chunk.content:
-                        last_model_content += chunk.content
-                        yield f"data: {json.dumps({'type': 'token', 'content': chunk.content})}\n\n"
-                elif kind == "on_chat_model_end" and is_response:
-                    # For models that don't stream (like DemoChatModel),
-                    # emit the full response as a single token
-                    if not last_model_content:
-                        output = event.get("data", {}).get("output")
-                        if output and hasattr(output, "content") and output.content:
-                            content = (
-                                output.content
-                                if isinstance(output.content, str)
-                                else str(output.content)
-                            )
-                            yield f"data: {json.dumps({'type': 'token', 'content': content})}\n\n"
+            async with asyncio.timeout(settings.llm_timeout_seconds):
+                async for event in graph.astream_events(
+                    initial_state,
+                    config={"configurable": {"thread_id": conversation_id}},
+                    version="v2",
+                ):
+                    if await raw_request.is_disconnected():
+                        logger.info(
+                            "Client disconnected during stream", conversation_id=conversation_id
+                        )
+                        return
+
+                    kind = event.get("event", "")
+                    metadata = event.get("metadata", {})
+                    # Only stream tokens from the response_synth node
+                    is_response = metadata.get("langgraph_node") == "response_synth"
+                    if kind == "on_chat_model_stream" and is_response:
+                        chunk = event.get("data", {}).get("chunk")
+                        if chunk and hasattr(chunk, "content") and chunk.content:
+                            last_model_content += chunk.content
+                            evt = json.dumps({"type": "token", "content": chunk.content})
+                            yield f"data: {evt}\n\n"
+                    elif kind == "on_chat_model_end" and is_response:
+                        # For models that don't stream (like DemoChatModel),
+                        # emit the full response as a single token
+                        if not last_model_content:
+                            output = event.get("data", {}).get("output")
+                            if output and hasattr(output, "content") and output.content:
+                                content = (
+                                    output.content
+                                    if isinstance(output.content, str)
+                                    else str(output.content)
+                                )
+                                evt = json.dumps({"type": "token", "content": content})
+                                yield f"data: {evt}\n\n"
+        except TimeoutError:
+            logger.warning("LLM timeout during stream", conversation_id=conversation_id)
+            msg = "Response timed out. Please try again."
+            evt = json.dumps({"type": "error", "content": msg})
+            yield f"data: {evt}\n\n"
         except Exception as e:
+            logger.error("Stream error", error=str(e), conversation_id=conversation_id)
             yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
 
         yield f"data: {json.dumps({'type': 'done', 'conversation_id': conversation_id})}\n\n"
 
-    return StreamingResponse(event_stream(), media_type="text/event-stream")
-
-
-@router.websocket("/chat/ws")
-async def chat_ws(websocket: WebSocket):
-    await websocket.accept()
-    await websocket.send_json({"type": "info", "message": "WebSocket connected — streaming TBD"})
-    await websocket.close()
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )

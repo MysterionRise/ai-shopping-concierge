@@ -106,7 +106,7 @@ backend/
         main.py          # FastAPI app factory + lifespan
         dependencies.py  # DI providers (get_db_session, get_redis, get_settings)
     alembic/             # Async Alembic migrations
-    tests/unit/          # 72 tests, 72% coverage
+    tests/unit/          # 76 tests, 72% coverage
     scripts/             # seed_catalog.py, compute_persona_vectors.py
 
 frontend/
@@ -130,8 +130,7 @@ infra/                   # postgres/init.sql, nginx/nginx.conf
 |--------|------|-------------|
 | GET | `/health` | Health check (postgres + redis status) |
 | POST | `/api/v1/chat` | Chat with agent pipeline |
-| POST | `/api/v1/chat/stream` | SSE streaming chat |
-| WS | `/api/v1/chat/ws` | WebSocket (stub) |
+| POST | `/api/v1/chat/stream` | SSE streaming chat (with timeout + disconnect handling) |
 | POST | `/api/v1/users` | Create user |
 | GET | `/api/v1/users/{id}` | Get user profile |
 | PATCH | `/api/v1/users/{id}` | Update user profile |
@@ -190,6 +189,7 @@ All config via environment variables, loaded by `app/config.py` (Pydantic Settin
 | `PERSONA_ENABLED` | `false` | Enable persona monitoring (requires torch) |
 | `LOG_LEVEL` | `INFO` | Logging level |
 | `CORS_ORIGINS` | `["http://localhost:3000"]` | Allowed origins |
+| `LLM_TIMEOUT_SECONDS` | `60` | Timeout for LLM calls in streaming |
 
 ---
 
@@ -236,7 +236,7 @@ make migrate         # alembic upgrade head
 
 ### Testing
 - **Framework:** pytest + pytest-asyncio (asyncio_mode=auto)
-- **72 unit tests** across 13 test files
+- **76 unit tests** across 13 test files
 - **Coverage:** 72% (threshold: 70%)
 - **Coverage omissions:** persona/*, vector_store, openbf_client, product_service, prompt_optimizer
 - **Mocking pattern:** `conftest.py` patches `get_llm` across all 5 agent modules, provides mock_db_session and mock_redis fixtures
@@ -298,7 +298,7 @@ make migrate         # alembic upgrade head
 - Docker Compose (6 services)
 - Alembic async migrations
 - CI pipeline (GitHub Actions: lint, security, test)
-- 72 unit tests, 72% coverage
+- 76 unit tests, 72% coverage
 - Demo scripts (scenario + test user generation)
 - LangGraph checkpointing via `AsyncPostgresSaver` (auto-creates tables, MemorySaver fallback)
 - Full Docker Compose E2E (6 services boot cleanly, backend runs alembic on startup, nginx reverse proxy with SSE support)
@@ -307,7 +307,7 @@ make migrate         # alembic upgrade head
 - **Product discovery:** Extracts search intent but returns empty results (ChromaDB query not wired to graph yet)
 - **Catalog seeding:** Script exists but needs `make seed` to populate
 - **Conversation persistence:** Routes exist but graph doesn't save messages to DB
-- **WebSocket chat:** Accepts connection then immediately closes
+- **WebSocket chat:** Removed (SSE is sufficient for this project)
 - **Persona monitoring frontend:** Uses mock data (no real scores flowing yet)
 - **Memory viewer frontend:** Uses mock data
 

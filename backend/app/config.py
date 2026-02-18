@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     app_port: int = 8080
     log_level: str = "INFO"
     cors_origins: list[str] = ["http://localhost:3000"]
+    llm_timeout_seconds: int = 60
 
     # LangSmith (optional)
     langsmith_api_key: str = ""

@@ -16,3 +16,4 @@ class Product(TimestampMixin, Base):
     ingredients_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     image_url: Mapped[str | None] = mapped_column(String(1000), nullable=True)
     safety_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    data_completeness: Mapped[float | None] = mapped_column(Float, nullable=True, default=0.0)

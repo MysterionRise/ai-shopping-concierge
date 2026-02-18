@@ -1,4 +1,4 @@
-.PHONY: infra-up infra-down backend-dev frontend-dev test lint seed
+.PHONY: infra-up infra-down backend-dev frontend-dev test lint seed seed-catalog
 
 infra-up:
 	docker compose up -d postgres redis chromadb
@@ -26,7 +26,9 @@ lint:
 format:
 	cd backend && black app tests && isort app tests
 
-seed:
+seed: seed-catalog
+
+seed-catalog:
 	cd backend && python -m scripts.seed_catalog
 
 migrate:

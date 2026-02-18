@@ -42,8 +42,16 @@ async def response_synth_node(state: AgentState) -> dict:
     safety_violations = state.get("safety_violations", [])
     safety_passed = state.get("safety_check_passed", True)
     memory_context = state.get("memory_context", [])
+    memory_notifications = state.get("memory_notifications", [])
 
     context_parts = []
+
+    if memory_notifications:
+        context_parts.append(
+            "IMPORTANT — Include these memory acknowledgments naturally in your response:\n"
+            + "\n".join(f"- {n}" for n in memory_notifications)
+        )
+
     if memory_context:
         context_parts.append(
             "User context from previous conversations:\n"

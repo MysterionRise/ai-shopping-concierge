@@ -17,5 +17,7 @@ class AgentState(TypedDict):
     safety_check_passed: bool
     safety_violations: list[dict[str, Any]]
     memory_context: list[str]
+    active_constraints: list[dict[str, Any]]
+    memory_notifications: list[str]
     persona_scores: dict[str, float]
     error: str | None

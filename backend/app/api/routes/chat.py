@@ -89,6 +89,8 @@ async def chat(
         "safety_check_passed": True,
         "safety_violations": [],
         "memory_context": [],
+        "active_constraints": [],
+        "memory_notifications": [],
         "persona_scores": {},
         "error": None,
     }
@@ -197,6 +199,8 @@ async def chat_stream(
         "safety_check_passed": True,
         "safety_violations": [],
         "memory_context": [],
+        "active_constraints": [],
+        "memory_notifications": [],
         "persona_scores": {},
         "error": None,
     }

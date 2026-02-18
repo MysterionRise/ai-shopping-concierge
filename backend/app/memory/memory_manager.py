@@ -120,33 +120,4 @@ class MemoryManager:
                 logger.error("Failed to delete memory", error=str(e))
         return False
 
-    async def learn_from_conversation(
-        self,
-        user_id: str,
-        messages: list[dict],
-    ):
-        """Extract facts from conversation and store as memories."""
-        # Simple heuristic extraction — will be enhanced with LLM extraction
-        for msg in messages:
-            content = msg.get("content", "").lower()
-            if "allergic to" in content or "allergy" in content:
-                await self.store_memory(
-                    user_id,
-                    "constraints",
-                    msg["content"],
-                    metadata={"source": "conversation", "type": "allergy"},
-                )
-            elif "i prefer" in content or "i like" in content:
-                await self.store_memory(
-                    user_id,
-                    "preferences",
-                    msg["content"],
-                    metadata={"source": "conversation", "type": "preference"},
-                )
-            elif "my skin" in content or "skin type" in content:
-                await self.store_memory(
-                    user_id,
-                    "semantic",
-                    msg["content"],
-                    metadata={"source": "conversation", "type": "skin_info"},
-                )
+    # learn_from_conversation() removed — replaced by background_extractor.py (2C.3)

@@ -61,9 +61,6 @@ async def test_get_all_memories_empty(manager):
     assert result == []
 
 
-async def test_learn_from_conversation_allergy(manager, mock_redis):
-    messages = [
-        {"role": "user", "content": "I'm allergic to sulfates in my shampoo"},
-    ]
-    await manager.learn_from_conversation("user-1", messages)
-    assert mock_redis.set.call_count >= 1
+async def test_get_all_constraints_empty(manager):
+    result = await manager.get_all_constraints("user-1")
+    assert result == []

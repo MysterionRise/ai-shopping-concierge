@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agents.safety_constraint import OVERRIDE_REFUSAL, check_override_attempt
 from app.config import settings
 from app.dependencies import get_db_session
+from app.memory.background_extractor import schedule_extraction
 from app.memory.constraint_store import get_user_constraints
 from app.models.conversation import Conversation, Message
 from app.models.user import User
@@ -269,6 +270,17 @@ async def chat_stream(
             yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
 
         yield f"data: {json.dumps({'type': 'done', 'conversation_id': conversation_id})}\n\n"
+
+        # Schedule background memory extraction
+        store = getattr(raw_request.app.state, "store", None)
+        stream_messages = [
+            {"role": "user", "content": request.message},
+        ]
+        if last_model_content:
+            stream_messages.append({"role": "assistant", "content": last_model_content})
+        schedule_extraction(
+            conversation_id, request.user_id, stream_messages, store, delay_seconds=30
+        )
 
     return StreamingResponse(
         event_stream(),

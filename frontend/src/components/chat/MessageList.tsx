@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react'
+import { Info } from 'lucide-react'
 import { ChatMessage, ProductCard } from '../../types'
 import MessageBubble from './MessageBubble'
 import ProductCardComponent from '../products/ProductCard'
+import { usePersonaStore } from '../../stores/personaStore'
 
 interface MessageListProps {
   messages: ChatMessage[]
@@ -17,6 +19,7 @@ export default function MessageList({
   streamingProducts,
 }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
+  const disclaimers = usePersonaStore((s) => s.disclaimers)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -37,7 +40,17 @@ export default function MessageList({
           </div>
         )}
         {messages.map((msg) => (
-          <MessageBubble key={msg.id} message={msg} />
+          <div key={msg.id}>
+            <MessageBubble message={msg} />
+            {msg.role === 'assistant' && disclaimers[msg.id] && (
+              <div className="flex justify-start mb-4 ml-2">
+                <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg max-w-[80%]">
+                  <Info className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                  <p className="text-xs text-amber-700">{disclaimers[msg.id]}</p>
+                </div>
+              </div>
+            )}
+          </div>
         ))}
         {isTyping && streamingContent && (
           <div className="flex justify-start mb-4">

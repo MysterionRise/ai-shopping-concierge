@@ -1,4 +1,4 @@
-.PHONY: infra-up infra-down backend-dev frontend-dev test lint seed seed-catalog migrate-memory
+.PHONY: infra-up infra-down backend-dev frontend-dev test lint seed seed-catalog migrate-memory compute-persona-vectors
 
 infra-up:
 	docker compose up -d postgres redis chromadb
@@ -39,3 +39,9 @@ migrate-create:
 
 migrate-memory:
 	cd backend && python -m scripts.migrate_redis_to_langmem
+
+compute-persona-vectors:
+	cd backend && python -m scripts.compute_persona_vectors --device $(or $(DEVICE),cpu)
+
+compute-persona-vectors-mock:
+	cd backend && python -m scripts.compute_persona_vectors --mock

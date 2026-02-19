@@ -1,8 +1,11 @@
+import { useEffect } from 'react'
 import { Activity } from 'lucide-react'
 import TraitGauge from './TraitGauge'
 import DriftChart from './DriftChart'
 import AlertBanner from './AlertBanner'
-import { PersonaEntry } from '../../types'
+import { usePersonaStore } from '../../stores/personaStore'
+import { useChatStore } from '../../stores/chatStore'
+import { usePersonaStream } from '../../hooks/usePersonaStream'
 
 const TRAIT_DEFINITIONS = [
   {
@@ -32,27 +35,47 @@ const TRAIT_DEFINITIONS = [
   },
 ]
 
-// Mock data — will be replaced with real API data
-const MOCK_SCORES: Record<string, number> = {
-  sycophancy: 0.23,
-  hallucination: 0.15,
-  over_confidence: 0.31,
-  safety_bypass: 0.08,
-  sales_pressure: 0.19,
-}
-
-const MOCK_HISTORY: PersonaEntry[] = []
-
 export default function PersonaMonitor() {
-  const scores = MOCK_SCORES
-  const history = MOCK_HISTORY
-  const alerts = TRAIT_DEFINITIONS.filter(
-    (t) => (scores[t.name] || 0) > t.threshold,
-  ).map((t) => ({
-    trait: t.name,
-    score: scores[t.name] || 0,
-    threshold: t.threshold,
-    timestamp: new Date().toISOString(),
+  const conversationId = useChatStore((s) => s.currentConversationId)
+  const { currentScores, scoreHistory, fetchHistory, fetchAlerts, alerts } =
+    usePersonaStore()
+
+  // Connect to SSE stream for real-time updates
+  usePersonaStream(conversationId)
+
+  // Load history when conversation changes
+  useEffect(() => {
+    if (conversationId) {
+      fetchHistory(conversationId)
+      fetchAlerts(conversationId)
+    }
+  }, [conversationId, fetchHistory, fetchAlerts])
+
+  const scores = currentScores
+  const computedAlerts =
+    alerts.length > 0
+      ? alerts
+      : TRAIT_DEFINITIONS.filter(
+          (t) => (scores[t.name] || 0) > t.threshold,
+        ).map((t) => ({
+          trait: t.name,
+          score: scores[t.name] || 0,
+          threshold: t.threshold,
+          timestamp: new Date().toISOString(),
+        }))
+
+  // Normalize history for DriftChart (backend uses snake_case)
+  const normalizedHistory = scoreHistory.map((entry) => ({
+    conversation_id: entry.conversation_id,
+    message_id: entry.message_id,
+    scores: {
+      sycophancy: entry.scores.sycophancy || 0,
+      hallucination: entry.scores.hallucination || 0,
+      over_confidence: entry.scores.over_confidence || 0,
+      safety_bypass: entry.scores.safety_bypass || 0,
+      sales_pressure: entry.scores.sales_pressure || 0,
+    },
+    timestamp: entry.timestamp,
   }))
 
   return (
@@ -71,7 +94,7 @@ export default function PersonaMonitor() {
           </p>
         </div>
 
-        <AlertBanner alerts={alerts} />
+        <AlertBanner alerts={computedAlerts} />
 
         <section className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">
@@ -94,7 +117,7 @@ export default function PersonaMonitor() {
           <h2 className="text-lg font-medium text-gray-900 mb-4">
             Trait Drift Over Conversation
           </h2>
-          <DriftChart history={history} />
+          <DriftChart history={normalizedHistory} />
         </section>
       </div>
     </div>

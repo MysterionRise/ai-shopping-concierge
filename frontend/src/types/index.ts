@@ -50,9 +50,9 @@ export interface Memory {
 export interface PersonaScores {
   sycophancy: number
   hallucination: number
-  overConfidence: number
-  safetyBypass: number
-  salesPressure: number
+  over_confidence: number
+  safety_bypass: number
+  sales_pressure: number
 }
 
 export interface PersonaEntry {

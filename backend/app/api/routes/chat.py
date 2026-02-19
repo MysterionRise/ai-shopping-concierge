@@ -145,6 +145,14 @@ async def chat(
     except Exception as e:
         logger.warning("Failed to persist conversation", error=str(e))
 
+    # Fire-and-forget persona evaluation
+    persona_monitor = getattr(raw_request.app.state, "persona_monitor", None)
+    if persona_monitor:
+        message_id = str(uuid.uuid4())
+        await persona_monitor.evaluate_async(
+            request.message, response_text, conversation_id, message_id
+        )
+
     product_results = graph_result.get("product_results", [])
     return ChatResponse(
         response=response_text,
@@ -276,6 +284,14 @@ async def chat_stream(
             yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
 
         yield f"data: {json.dumps({'type': 'done', 'conversation_id': conversation_id})}\n\n"
+
+        # Fire-and-forget persona evaluation
+        persona_monitor = getattr(raw_request.app.state, "persona_monitor", None)
+        if persona_monitor and last_model_content:
+            message_id = str(uuid.uuid4())
+            await persona_monitor.evaluate_async(
+                request.message, last_model_content, conversation_id, message_id
+            )
 
         # Schedule background memory extraction
         store = getattr(raw_request.app.state, "store", None)

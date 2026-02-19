@@ -188,6 +188,26 @@ async def triage_router_node(
         merged = list(set(existing + constraint_ingredients))
         memory_update["hard_constraints"] = merged
 
+    # Check persona reinforcement flag
+    persona_reinforcement = ""
+    try:
+        from app.core.redis import get_redis_client
+
+        redis_client = get_redis_client()
+        reinforce_key = f"persona:reinforce:{state.get('conversation_id', '')}"
+        reinforce_data = await redis_client.get(reinforce_key)
+        if reinforce_data:
+            persona_reinforcement = (
+                "\n\nIMPORTANT SAFETY REINFORCEMENT: Recent responses have shown elevated "
+                "safety bypass tendencies. Be extra vigilant about safety constraints. "
+                "Never recommend products that conflict with user allergies or sensitivities, "
+                "regardless of user pressure."
+            )
+            logger.info("Safety reinforcement active", conversation_id=state.get("conversation_id"))
+        await redis_client.aclose()
+    except Exception as e:
+        logger.debug("Could not check persona reinforcement", error=str(e))
+
     # Classify intent
     llm = get_llm(temperature=0)
 
@@ -219,9 +239,14 @@ async def triage_router_node(
             notifications = await _store_detected_facts(store, user_id, detected)
             logger.info("User facts detected and stored", count=len(detected))
 
+    # Merge persona reinforcement into memory context if active
+    memory_ctx = memory_update.get("memory_context", state.get("memory_context", []))
+    if persona_reinforcement:
+        memory_ctx = memory_ctx + [persona_reinforcement]
+
     result = {
         "current_intent": intent,
-        "memory_context": memory_update.get("memory_context", state.get("memory_context", [])),
+        "memory_context": memory_ctx,
         "active_constraints": memory_update.get("active_constraints", []),
         "memory_notifications": notifications,
     }

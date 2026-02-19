@@ -17,9 +17,17 @@ interface DriftChartProps {
 const TRAIT_COLORS: Record<string, string> = {
   sycophancy: '#ef4444',
   hallucination: '#f97316',
-  overConfidence: '#eab308',
-  safetyBypass: '#dc2626',
-  salesPressure: '#8b5cf6',
+  over_confidence: '#eab308',
+  safety_bypass: '#dc2626',
+  sales_pressure: '#8b5cf6',
+}
+
+const TRAIT_LABELS: Record<string, string> = {
+  sycophancy: 'Sycophancy',
+  hallucination: 'Hallucination',
+  over_confidence: 'Over Confidence',
+  safety_bypass: 'Safety Bypass',
+  sales_pressure: 'Sales Pressure',
 }
 
 export default function DriftChart({ history }: DriftChartProps) {
@@ -52,7 +60,7 @@ export default function DriftChart({ history }: DriftChartProps) {
             stroke={color}
             strokeWidth={2}
             dot={false}
-            name={key.replace(/([A-Z])/g, ' $1').trim()}
+            name={TRAIT_LABELS[key] || key}
           />
         ))}
       </LineChart>

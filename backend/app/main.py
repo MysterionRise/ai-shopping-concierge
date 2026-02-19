@@ -56,6 +56,25 @@ async def lifespan(app: FastAPI):
         app.state.store = None
         store_cm = None
 
+    # Initialize PersonaMonitor
+    app.state.persona_monitor = None
+    if settings.persona_enabled:
+        try:
+            from app.core.database import async_session_factory
+            from app.core.redis import get_redis_client
+            from app.persona.monitor import MockPersonaScorer, PersonaMonitor
+
+            persona_redis = get_redis_client()
+            scorer = MockPersonaScorer() if settings.persona_scorer == "mock" else None
+            app.state.persona_monitor = PersonaMonitor(
+                redis_client=persona_redis,
+                scorer=scorer,
+                db_session_factory=async_session_factory,
+            )
+            logger.info("PersonaMonitor initialized", scorer=settings.persona_scorer)
+        except Exception as e:
+            logger.warning("PersonaMonitor initialization failed", error=str(e))
+
     # Compile graph with checkpointer and store
     app.state.graph = compile_graph(checkpointer, store=store)
 

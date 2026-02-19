@@ -21,9 +21,11 @@ if TYPE_CHECKING:
 logger = structlog.get_logger()
 
 VECTORS_DIR = Path(__file__).parent / "vectors"
+MOCK_VECTORS_DIR = VECTORS_DIR / "mock"
 MODEL_NAME = "meta-llama/Llama-3.1-8B-Instruct"
 MODEL_REVISION = "main"  # nosec B615
 TARGET_LAYER = 16  # Middle layer for activation extraction
+HIDDEN_DIM = 4096  # Llama 3.1 8B hidden dimension
 
 
 class PersonaVectorExtractor:
@@ -60,21 +62,30 @@ class PersonaVectorExtractor:
             logger.error("Failed to load model", error=str(e))
 
     def extract_vector(self, trait_def: TraitDefinition) -> torch.Tensor | None:
+        """Extract persona vector for a single trait using all contrast pairs."""
+        import torch
+
         self._load_model()
         if not self.model:
             return None
 
-        # Generate activations for positive (undesirable) prompt
-        pos_acts = self._get_activations(trait_def.positive_prompt)
-        # Generate activations for negative (desired) prompt
-        neg_acts = self._get_activations(trait_def.negative_prompt)
+        all_pairs = [(trait_def.positive_prompt, trait_def.negative_prompt)]
+        all_pairs.extend(trait_def.contrast_pairs)
 
-        if pos_acts is None or neg_acts is None:
+        diffs = []
+        for pos_prompt, neg_prompt in all_pairs:
+            pos_acts = self._get_activations(pos_prompt)
+            neg_acts = self._get_activations(neg_prompt)
+            if pos_acts is not None and neg_acts is not None:
+                diff = pos_acts.mean(dim=1) - neg_acts.mean(dim=1)
+                diffs.append(diff.squeeze())
+
+        if not diffs:
             return None
 
-        # Persona vector = mean difference
-        vector = pos_acts.mean(dim=1) - neg_acts.mean(dim=1)
-        return vector.squeeze()
+        # Mean of all pair differences for a more robust vector
+        vector = torch.stack(diffs).mean(dim=0)
+        return vector
 
     def _get_activations(self, prompt: str) -> torch.Tensor | None:
         import torch
@@ -154,3 +165,59 @@ class PersonaVectorExtractor:
             if vector is not None:
                 self.persona_vectors[trait.name] = vector
         self.save_vectors()
+
+    @classmethod
+    def load_vectors(cls, vectors_dir: Path | None = None) -> dict[str, "torch.Tensor"]:
+        """Load persona vectors from disk, falling back to mock vectors.
+
+        Tries real vectors first, then mock vectors for dev/CI.
+        Returns a dict mapping trait name to tensor of shape (HIDDEN_DIM,).
+        """
+        import torch
+
+        real_dir = vectors_dir or VECTORS_DIR
+        mock_dir = real_dir / "mock" if vectors_dir else MOCK_VECTORS_DIR
+
+        # Try real vectors first
+        if real_dir.exists():
+            pt_files = list(real_dir.glob("*.pt"))
+            # Filter out mock directory files
+            pt_files = [f for f in pt_files if f.parent == real_dir]
+            if pt_files:
+                vectors = {}
+                for pt_file in pt_files:
+                    vectors[pt_file.stem] = torch.load(pt_file, weights_only=True)
+                logger.info("Loaded real persona vectors", count=len(vectors))
+                return vectors
+
+        # Fall back to mock vectors
+        if mock_dir.exists():
+            pt_files = list(mock_dir.glob("*.pt"))
+            if pt_files:
+                vectors = {}
+                for pt_file in pt_files:
+                    vectors[pt_file.stem] = torch.load(pt_file, weights_only=True)
+                logger.info("Loaded mock persona vectors (dev/CI mode)", count=len(vectors))
+                return vectors
+
+        logger.warning("No persona vectors found (real or mock)")
+        return {}
+
+
+def generate_mock_vectors(output_dir: Path | None = None) -> None:
+    """Generate random mock vectors for dev/CI use."""
+    import torch
+
+    target_dir = output_dir or MOCK_VECTORS_DIR
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    for trait in PERSONA_TRAITS:
+        path = target_dir / f"{trait.name}.pt"
+        # Deterministic seed per trait for reproducibility
+        gen = torch.Generator().manual_seed(hash(trait.name) % (2**31))
+        vector = torch.randn(HIDDEN_DIM, generator=gen)
+        # Normalize to unit vector
+        vector = vector / vector.norm()
+        torch.save(vector, path)
+
+    logger.info("Generated mock persona vectors", dir=str(target_dir), count=len(PERSONA_TRAITS))

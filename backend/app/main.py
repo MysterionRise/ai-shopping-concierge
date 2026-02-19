@@ -92,7 +92,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="AI Beauty Shopping Concierge",
         description="Multi-agent AI system for personalized beauty recommendations",
-        version="0.1.0",
+        version="1.0.0",
         lifespan=lifespan,
     )
 

@@ -1,4 +1,4 @@
-.PHONY: infra-up infra-down backend-dev frontend-dev test lint seed seed-catalog migrate-memory compute-persona-vectors
+.PHONY: infra-up infra-down backend-dev frontend-dev test lint seed seed-catalog migrate-memory compute-persona-vectors demo demo-users
 
 infra-up:
 	docker compose up -d postgres redis chromadb
@@ -19,6 +19,12 @@ test:
 
 test-unit:
 	cd backend && python -m pytest tests/unit -v --cov=app --cov-report=term-missing
+
+test-integration:
+	cd backend && python -m pytest tests/integration -v
+
+test-eval:
+	cd backend && python -m pytest tests/eval -v
 
 lint:
 	cd backend && black --check app tests && isort --check-only app tests && flake8 app tests
@@ -45,3 +51,9 @@ compute-persona-vectors:
 
 compute-persona-vectors-mock:
 	cd backend && python -m scripts.compute_persona_vectors --mock
+
+demo-users:
+	python scripts/generate_test_users.py
+
+demo:
+	python scripts/demo_scenario.py

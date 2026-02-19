@@ -2,6 +2,7 @@ import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.catalog.ingredient_interactions import find_ingredient_interactions
 from app.catalog.ingredient_parser import find_allergen_matches, parse_ingredients
 from app.core.vector_store import get_or_create_collection, search_similar
 from app.models.product import Product
@@ -79,6 +80,9 @@ def _product_to_result(product: Product) -> dict:
         safety_badge = "safe"
         safety_check_passed = True
 
+    # Check for ingredient interactions within the product
+    interactions = find_ingredient_interactions(ingredients) if ingredients else []
+
     return {
         "id": str(product.id),
         "name": product.name,
@@ -90,6 +94,7 @@ def _product_to_result(product: Product) -> dict:
         "safety_badge": safety_badge,
         "safety_check_passed": safety_check_passed,
         "data_completeness": product.data_completeness or 0.0,
+        "ingredient_interactions": interactions,
         "fit_reasons": [],
     }
 

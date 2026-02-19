@@ -115,6 +115,20 @@ async def response_synth_node(state: AgentState, *, store: BaseStore | None = No
                 for p in product_results
             )
             context_parts.append(f"Safe products found:\n{product_text}")
+
+            # Surface ingredient interaction warnings
+            interactions_found = []
+            for p in product_results:
+                for ix in p.get("ingredient_interactions", []):
+                    interactions_found.append(
+                        f"- {p.get('name', '?')}: {ix['label']} "
+                        f"({ix['severity']}) — {ix['concern']}"
+                    )
+            if interactions_found:
+                context_parts.append(
+                    "Ingredient interaction warnings (mention if relevant):\n"
+                    + "\n".join(interactions_found)
+                )
         elif not safety_passed:
             context_parts.append(
                 "All products were filtered out due to safety constraints. "

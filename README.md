@@ -36,10 +36,11 @@ A production-grade multi-agent AI system for personalized beauty and skincare re
 ## Key Features
 
 - **Multi-Agent Architecture** — LangGraph state machine with triage, product discovery, safety constraint, and response synthesis nodes
-- **Safety-First Design** — Dual-gate safety architecture (rule-based + LLM) that refuses to override allergen constraints
-- **Long-Term Memory** — Persistent user memories across sessions with memory inspector
-- **Persona Monitoring** — Hidden state activation analysis via raw transformers (Llama 3.1 8B) to detect sycophancy, hallucination, and safety bypass
-- **Real Product Catalog** — Seeded from Open Beauty Facts with ingredient parsing and safety scoring
+- **Safety-First Design** — Dual-gate safety (rule-based + LLM) that refuses to override allergen constraints, with ingredient interaction warnings
+- **Long-Term Memory** — LangMem SDK-backed persistent memories with conflict detection, background extraction, and user consent controls
+- **Persona Monitoring** — Shadow scoring for 5 behavioral traits (sycophancy, hallucination, over-confidence, safety bypass, sales pressure) with threshold interventions
+- **Real Product Catalog** — Seeded from Open Beauty Facts with ingredient parsing, safety scoring, and interaction checking
+- **Ingredient Interactions** — 10 known incompatible ingredient pairs flagged with severity levels
 
 ## Quick Start
 
@@ -51,9 +52,6 @@ A production-grade multi-agent AI system for personalized beauty and skincare re
 ### Development Setup
 
 ```bash
-# Clone and enter the project
-cd ai-shopping-concierge
-
 # Start infrastructure services
 make infra-up
 
@@ -63,7 +61,7 @@ cd backend && pip install -e ".[dev]" && cd ..
 # Run database migrations
 make migrate
 
-# Seed product catalog
+# Seed product catalog (optional — requires running infra)
 make seed
 
 # Start backend (terminal 1)
@@ -71,6 +69,12 @@ make backend-dev
 
 # Start frontend (terminal 2)
 make frontend-dev
+
+# Generate demo users (optional)
+make demo-users
+
+# Run full demo scenario
+make demo
 ```
 
 ### Full Stack with Docker
@@ -79,7 +83,7 @@ make frontend-dev
 docker compose up --build
 ```
 
-Then visit `http://localhost` (nginx), or `http://localhost:3000` (frontend direct), or `http://localhost:8080/health` (backend API).
+Then visit `http://localhost` (nginx), `http://localhost:3000` (frontend), or `http://localhost:8080/health` (backend API).
 
 ## Tech Stack
 
@@ -88,10 +92,11 @@ Then visit `http://localhost` (nginx), or `http://localhost:3000` (frontend dire
 | Frontend | React 18, TypeScript, Tailwind CSS, Zustand, React Query, Recharts |
 | Backend | FastAPI, LangGraph, SQLAlchemy (async), Pydantic v2 |
 | LLM Gateway | OpenRouter (provider-agnostic) |
+| Memory | LangMem SDK + AsyncPostgresStore |
 | Database | PostgreSQL 16 (pgvector) |
 | Cache | Redis 7 |
 | Vector Store | ChromaDB |
-| Persona | PyTorch + HuggingFace Transformers (Llama 3.1 8B) |
+| Persona | MockPersonaScorer (default) or PyTorch + Llama 3.1 8B (optional) |
 | CI/CD | GitHub Actions |
 | Infrastructure | Docker Compose (6 services) |
 
@@ -102,7 +107,7 @@ User Message
      │
      ▼
 ┌─────────────┐
-│   Triage    │ ──── Classify intent
+│   Triage    │ ── Classify intent + load memory
 │   Router    │
 └──────┬──────┘
        │
@@ -111,26 +116,27 @@ User Message
        ├── routine_advice ───┤
        │                     ▼
        │              ┌────────────┐
-       │              │  Safety    │ Pre-filter by allergens
-       │              │ Pre-Gate   │
-       │              └─────┬──────┘
-       │                    ▼
-       │              ┌────────────┐
-       │              │  Product   │ Semantic search + ranking
+       │              │  Product   │ Hybrid search + interaction check
        │              │ Discovery  │
        │              └─────┬──────┘
        │                    ▼
        │              ┌────────────┐
-       │              │  Safety    │ LLM post-validation
-       │              │ Post-Gate  │
+       │              │  Safety    │ Dual-gate (rule + LLM)
+       │              │ Validator  │
        │              └─────┬──────┘
        │                    │
+       ├── memory_query ────┤
        └── general_chat ────┤
                             ▼
                      ┌────────────┐
-                     │  Response  │ Natural language synthesis
+                     │  Response  │ Natural language + memory acks
                      │  Synth     │
                      └────────────┘
+                            │
+                     ┌──────┴──────┐
+                     │  Persona    │ Fire-and-forget scoring
+                     │  Monitor    │
+                     └─────────────┘
 ```
 
 ## Project Structure
@@ -140,23 +146,29 @@ ai-shopping-concierge/
 ├── backend/
 │   ├── app/
 │   │   ├── agents/          # LangGraph nodes (triage, discovery, safety, response)
-│   │   ├── api/routes/      # FastAPI endpoints
-│   │   ├── catalog/         # Product catalog, ingredients, safety scoring
+│   │   ├── api/routes/      # FastAPI endpoints (chat, users, products, memory, persona)
+│   │   ├── catalog/         # Product catalog, ingredients, safety scoring, interactions
 │   │   ├── core/            # Database, Redis, LLM configuration
-│   │   ├── memory/          # Long-term memory management
-│   │   ├── models/          # SQLAlchemy models
-│   │   └── persona/         # Persona monitoring (traits, vectors, monitor)
+│   │   ├── memory/          # LangMem config, conflict detection, background extraction
+│   │   ├── models/          # SQLAlchemy models (user, product, conversation, persona)
+│   │   └── persona/         # Traits, monitor, vector extractor, mock scorer
 │   ├── tests/
-│   └── scripts/
+│   │   ├── unit/            # Unit tests (174 tests)
+│   │   ├── integration/     # Pipeline and API integration tests
+│   │   └── eval/            # Evaluation suite (safety, memory, persona)
+│   └── scripts/             # Seed catalog, compute vectors, migrate memory
 ├── frontend/
 │   └── src/
 │       ├── components/      # React components (chat, products, profile, persona)
-│       ├── stores/          # Zustand state management
-│       ├── hooks/           # React Query hooks
-│       └── api/             # API client
+│       ├── stores/          # Zustand (chatStore, userStore, personaStore)
+│       ├── hooks/           # React Query + SSE hooks
+│       └── api/             # API client (chat, users, products, persona)
+├── scripts/                 # Demo scenario, test user generation
+├── docs/                    # Architecture, API, decisions, persona vectors
 ├── infra/                   # Postgres init, Nginx config
 ├── docker-compose.yml       # 6-service Docker stack
-└── Makefile
+├── Makefile                 # Development commands
+└── CHANGELOG.md             # Version history
 ```
 
 ## API Endpoints
@@ -172,22 +184,43 @@ ai-shopping-concierge/
 | GET | `/api/v1/products/search` | Search products |
 | GET | `/api/v1/products/{id}` | Get product details |
 | GET | `/api/v1/conversations` | List conversations |
+| GET | `/api/v1/conversations/{id}/messages` | Get messages |
 | GET | `/api/v1/users/{id}/memory` | Get user memories |
+| DELETE | `/api/v1/users/{id}/memory/{mid}` | Delete memory |
+| GET | `/api/v1/users/{id}/memory/constraints` | Get constraints |
+| POST | `/api/v1/users/{id}/memory/constraints` | Add constraint |
 | GET | `/api/v1/persona/scores` | Get persona scores |
 | GET | `/api/v1/persona/history` | Get persona history |
+| GET | `/api/v1/persona/alerts` | Get persona alerts |
+| GET | `/api/v1/persona/stream` | SSE persona updates |
 
 ## Testing
 
 ```bash
-# Run all backend tests
-make test
-
-# Run with coverage report
-cd backend && python -m pytest tests/ -v --cov=app --cov-report=html
-
-# Lint
-make lint
+make test              # All tests with coverage
+make test-unit         # Unit tests only
+make test-integration  # Integration tests
+make test-eval         # Evaluation suite
+make lint              # Code quality (black + isort + flake8)
 ```
+
+## Demo
+
+```bash
+# Generate 5 demo users with varied profiles
+make demo-users
+
+# Run 10-step comprehensive demo
+make demo
+```
+
+## Documentation
+
+- [Architecture](docs/ARCHITECTURE.md) — System design and data flow
+- [API Reference](docs/API.md) — Endpoint documentation
+- [Decisions](docs/DECISIONS.md) — Architectural decision records
+- [Persona Vectors](docs/PERSONA_VECTORS.md) — Persona monitoring details
+- [Changelog](CHANGELOG.md) — Version history
 
 ## License
 

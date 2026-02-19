@@ -37,9 +37,22 @@ Send a chat message and receive a response.
   "conversation_id": "uuid",
   "intent": "product_search",
   "safety_violations": [],
-  "product_count": 3
+  "product_count": 3,
+  "products": [
+    {
+      "id": "uuid",
+      "name": "Product Name",
+      "brand": "Brand",
+      "safety_score": 8.5,
+      "key_ingredients": ["niacinamide", "hyaluronic acid"],
+      "ingredient_interactions": [],
+      "fit_reasons": ["Matches your search for moisturizer"]
+    }
+  ]
 }
 ```
+
+**Override detection:** If the message contains override language (e.g., "show it anyway", "ignore my allergies"), the response will have `intent: "safety_override_blocked"` and a refusal message.
 
 ### POST /api/v1/chat/stream
 SSE streaming chat endpoint.
@@ -51,7 +64,13 @@ SSE streaming chat endpoint.
 data: {"type": "token", "content": "Here"}
 data: {"type": "token", "content": " are"}
 data: {"type": "token", "content": " some"}
+data: {"type": "products", "products": [...]}
 data: {"type": "done", "conversation_id": "uuid"}
+```
+
+**Error events:**
+```
+data: {"type": "error", "content": "Response timed out. Please try again."}
 ```
 
 ## Users
@@ -82,7 +101,7 @@ Update user profile. All fields optional.
 Search products by name, brand, or ingredients.
 
 ### GET /api/v1/products/{product_id}
-Get product details.
+Get product details including ingredients, safety score, and ingredient interactions.
 
 ## Conversations
 
@@ -95,27 +114,58 @@ Get messages for a conversation.
 ## Memory
 
 ### GET /api/v1/users/{user_id}/memory
-Get all stored memories for a user.
+Get all stored memories for a user (facts and constraints from LangMem store).
 
 ### DELETE /api/v1/users/{user_id}/memory/{memory_id}
 Delete a specific memory.
 
 ### GET /api/v1/users/{user_id}/memory/constraints
-Get user's stored constraints.
+Get user's stored constraints (allergies and sensitivities).
 
 ### POST /api/v1/users/{user_id}/memory/constraints
 Add a new constraint.
 
-## Persona
+**Request:**
+```json
+{
+  "ingredient": "paraben",
+  "severity": "absolute",
+  "source": "user_stated"
+}
+```
+
+## Persona Monitoring
 
 ### GET /api/v1/persona/scores?conversation_id=uuid&message_id=uuid
 Get persona scores for a specific message.
 
+**Response:**
+```json
+{
+  "conversation_id": "uuid",
+  "message_id": "uuid",
+  "scores": {
+    "sycophancy": 0.12,
+    "hallucination": 0.08,
+    "over_confidence": 0.15,
+    "safety_bypass": 0.05,
+    "sales_pressure": 0.10
+  },
+  "timestamp": "2025-01-01T12:00:00Z"
+}
+```
+
 ### GET /api/v1/persona/history?conversation_id=uuid
-Get persona score history for a conversation.
+Get persona score history for a conversation. Returns all scores ordered by timestamp.
 
 ### GET /api/v1/persona/alerts?conversation_id=uuid
-Get persona alerts (threshold violations).
+Get persona alerts (threshold violations) for a conversation.
 
 ### GET /api/v1/persona/stream?conversation_id=uuid
 SSE stream for real-time persona updates.
+
+**Events:**
+```
+data: {"scores": {...}, "conversation_id": "uuid", "message_id": "uuid", "timestamp": "..."}
+data: {"type": "intervention", "intervention_type": "disclaimer", "trait": "hallucination", "text": "...", "message_id": "uuid"}
+```

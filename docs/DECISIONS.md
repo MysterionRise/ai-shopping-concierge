@@ -27,6 +27,7 @@
 - Requires ~16GB RAM or 6GB VRAM
 - Model download is ~16GB
 - Made optional via `PERSONA_ENABLED` config flag
+- Mock scorer provides dev/CI coverage without ML dependencies
 
 ## ADR-004: Dual-Gate Safety Architecture
 
@@ -38,15 +39,16 @@
 - Belt-and-suspenders approach for safety-critical functionality
 - Sycophancy resistance is explicit — system refuses override requests for hard constraints
 
-## ADR-005: Redis for Memory + Persona Scores
+## ADR-005: LangMem SDK for Long-Term Memory
 
-**Decision:** Use Redis as the primary fast-write store for memories and persona scores, with periodic flush to Postgres.
+**Decision:** Use LangMem SDK with `AsyncPostgresStore` for long-term memory (replaced earlier Redis-only approach).
 
 **Rationale:**
-- Persona scoring is fire-and-forget — can't block the response pipeline
-- Memory lookups need to be fast (called at start of every request)
-- Redis gives sub-millisecond reads
-- Postgres is the source of truth; Redis is the hot cache
+- Semantic search over memories via vector embeddings
+- Structured namespaces (user_facts, constraints, episodes)
+- Conflict detection for contradictory facts
+- Background extraction via LLM after each conversation turn
+- PostgreSQL persistence with Redis for hot-path caching (persona scores, SSE)
 
 ## ADR-006: Monorepo Structure
 
@@ -56,3 +58,24 @@
 - Simpler CI/CD — one workflow, one PR for full-stack changes
 - Docker Compose at root orchestrates everything
 - Appropriate for a portfolio project of this size
+
+## ADR-007: Mock-First Persona Scoring
+
+**Decision:** Default to `MockPersonaScorer` (rule-based regex) with opt-in real model scoring.
+
+**Rationale:**
+- Enables persona monitoring in all environments (dev, CI, production)
+- No ML dependencies required for the default path
+- Real scorer only needed for production-quality monitoring
+- Mock scorer detects common patterns (override language, sales pressure, etc.) via regex
+- Config: `PERSONA_SCORER=mock` (default) or `PERSONA_SCORER=real`
+
+## ADR-008: Ingredient Interaction Database
+
+**Decision:** Static database of known ingredient incompatibilities, checked at product enrichment time.
+
+**Rationale:**
+- Dermatological consensus on which actives conflict (retinoid+AHA, etc.)
+- Zero-latency check (no LLM call needed)
+- Surfaced as warnings in response synthesis, not hard blocks
+- Severity levels (high/medium/low) let the response synthesizer calibrate advice

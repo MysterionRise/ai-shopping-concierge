@@ -58,7 +58,7 @@ async def _load_all_memories(store: BaseStore, user_id: str) -> list[str]:
     return memories
 
 
-async def response_synth_node(state: AgentState, *, store: BaseStore = None) -> dict:
+async def response_synth_node(state: AgentState, *, store: BaseStore | None = None) -> dict:
     logger.info("Response synthesis invoked", intent=state.get("current_intent"))
 
     intent = state.get("current_intent", "general_chat")

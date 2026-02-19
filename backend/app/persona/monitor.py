@@ -11,11 +11,15 @@ import random
 import re
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 import redis.asyncio as aioredis
 import structlog
 
 from app.persona.traits import PERSONA_TRAITS, TRAIT_CONFIG
+
+if TYPE_CHECKING:
+    from app.persona.vector_extractor import PersonaVectorExtractor
 
 logger = structlog.get_logger()
 
@@ -131,7 +135,7 @@ class PersonaMonitor:
         self.redis = redis_client
         self._scorer = scorer
         self._db_session_factory = db_session_factory
-        self._extractor = None
+        self._extractor: PersonaVectorExtractor | None = None
 
     def _get_scorer(self) -> PersonaScorer | None:
         if self._scorer is not None:
@@ -211,9 +215,8 @@ class PersonaMonitor:
             await self._persist_to_db(scores, conversation_id, message_id)
 
             # Check thresholds and trigger interventions
-            await self._check_interventions(
-                scores, conversation_id, message_id, score_data.get("timestamp", "")
-            )
+            timestamp = str(score_data.get("timestamp", ""))
+            await self._check_interventions(scores, conversation_id, message_id, timestamp)
 
         except Exception as e:
             logger.error("Persona evaluation failed", error=str(e))

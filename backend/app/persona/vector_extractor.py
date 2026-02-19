@@ -99,8 +99,8 @@ class PersonaVectorExtractor:
 
         hidden_states = outputs.hidden_states
         if TARGET_LAYER < len(hidden_states):
-            return hidden_states[TARGET_LAYER].cpu()
-        return hidden_states[-1].cpu()
+            return hidden_states[TARGET_LAYER].cpu()  # type: ignore[no-any-return]
+        return hidden_states[-1].cpu()  # type: ignore[no-any-return]
 
     def score_response(
         self,

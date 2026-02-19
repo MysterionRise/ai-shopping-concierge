@@ -144,7 +144,7 @@ async def hybrid_search(
             # Look up the full product from Postgres
             stmt = select(Product).where(Product.id == vid)
             db_result = await db.execute(stmt)
-            product = db_result.scalar_one_or_none()
+            product = db_result.scalar_one_or_none()  # type: ignore[assignment]
             if not product:
                 continue
 

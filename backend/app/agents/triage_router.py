@@ -160,7 +160,7 @@ async def _store_detected_facts(store: BaseStore, user_id: str, facts: list[dict
 
 
 async def triage_router_node(
-    state: AgentState, config: RunnableConfig = None, *, store: BaseStore = None
+    state: AgentState, config: RunnableConfig | None = None, *, store: BaseStore | None = None
 ) -> dict:
     logger.info("Triage router invoked", user_id=state.get("user_id"))
 

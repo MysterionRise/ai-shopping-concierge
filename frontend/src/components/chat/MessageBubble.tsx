@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import ReactMarkdown from 'react-markdown'
-import { ShieldAlert, ChevronDown, ChevronUp } from 'lucide-react'
+import { ShieldAlert, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
 import { ChatMessage } from '../../types'
 import ProductCard from '../products/ProductCard'
 
@@ -25,7 +25,14 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
   const intentInfo = message.intent ? INTENT_LABELS[message.intent] : null
 
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4`}>
+    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-4 animate-message-in`}>
+      {!isUser && (
+        <div className="flex-shrink-0 mr-2 mt-1">
+          <div className="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center">
+            <Sparkles className="w-3.5 h-3.5 text-primary-500" />
+          </div>
+        </div>
+      )}
       <div
         className={`max-w-[80%] rounded-2xl px-4 py-3 ${
           isUser
@@ -100,6 +107,13 @@ export default function MessageBubble({ message }: MessageBubbleProps) {
           </div>
         )}
       </div>
+      {isUser && (
+        <div className="flex-shrink-0 ml-2 mt-1">
+          <div className="w-7 h-7 rounded-full bg-primary-500 flex items-center justify-center">
+            <span className="text-[10px] font-semibold text-white">You</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

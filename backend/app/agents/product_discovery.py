@@ -15,6 +15,8 @@ Respond in this exact format (one per line):
 product_type: <type of product, e.g. moisturizer, cleanser, serum>
 properties: <desired properties, e.g. hydrating, oil-free, anti-aging>
 skin_type: <user's skin type if mentioned, e.g. oily, dry, combination, sensitive>
+brand_preference: <preferred brand if mentioned, e.g. CeraVe, La Roche-Posay, The Ordinary>
+format_preference: <preferred format if mentioned, e.g. cream, gel, serum, oil, lotion, foam>
 
 If a field is not mentioned, write "unknown" for that field."""
 
@@ -23,6 +25,8 @@ class SearchIntent(BaseModel):
     product_type: str = "unknown"
     properties: str = "unknown"
     skin_type: str = "unknown"
+    brand_preference: str = "unknown"
+    format_preference: str = "unknown"
 
 
 def parse_search_intent(text: str) -> SearchIntent:
@@ -38,6 +42,10 @@ def parse_search_intent(text: str) -> SearchIntent:
                 intent.properties = value
             elif key == "skin_type":
                 intent.skin_type = value
+            elif key == "brand_preference":
+                intent.brand_preference = value
+            elif key == "format_preference":
+                intent.format_preference = value
     return intent
 
 
@@ -63,6 +71,17 @@ def _generate_fit_reasons(intent: SearchIntent, product: dict) -> list[str]:
         ing_text = " ".join(i.lower() for i in ingredients)
         if any(p.strip() in ing_text or p.strip() in name_lower for p in props.split(",")):
             reasons.append(f"Contains {intent.properties}")
+
+    if intent.brand_preference != "unknown":
+        bp = intent.brand_preference.lower()
+        brand = (product.get("brand") or "").lower()
+        if bp in brand or brand in bp:
+            reasons.append(f"From your preferred brand: {intent.brand_preference}")
+
+    if intent.format_preference != "unknown":
+        fp = intent.format_preference.lower()
+        if fp in name_lower or any(fp in c for c in categories):
+            reasons.append(f"Available in your preferred format: {intent.format_preference}")
 
     if product.get("safety_badge") == "safe":
         reasons.append("Passed safety checks")
@@ -108,10 +127,19 @@ async def product_discovery_node(state: AgentState) -> dict:
         query_parts.append(intent.properties)
     if intent.skin_type != "unknown":
         query_parts.append(f"for {intent.skin_type} skin")
+    if intent.brand_preference != "unknown":
+        query_parts.append(intent.brand_preference)
+    if intent.format_preference != "unknown":
+        query_parts.append(intent.format_preference)
+
+    # Incorporate soft_preferences from user state
+    soft_preferences = state.get("soft_preferences", [])
+    if soft_preferences:
+        query_parts.extend(soft_preferences)
 
     search_query = " ".join(query_parts) if query_parts else user_text
 
-    logger.info("Search query built", query=search_query)
+    logger.info("Search query built", query=search_query, soft_preferences=soft_preferences)
 
     # Hybrid search: keyword + vector, with allergen pre-filtering
     hard_constraints = state.get("hard_constraints", [])

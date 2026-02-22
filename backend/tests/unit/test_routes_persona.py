@@ -26,8 +26,8 @@ def mock_redis():
 
 @pytest.fixture
 def client(mock_redis):
-    async def override_redis():
-        yield mock_redis
+    def override_redis():
+        return mock_redis
 
     app.dependency_overrides[get_redis] = override_redis
     # Set up shared PersonaMonitor on app state so routes can access it

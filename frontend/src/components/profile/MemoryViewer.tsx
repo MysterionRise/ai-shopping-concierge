@@ -1,7 +1,8 @@
-import { Brain, Trash2, Loader2 } from 'lucide-react'
+import { Brain, Trash2 } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useUserStore } from '../../stores/userStore'
 import { getUserMemories, deleteMemory } from '../../api/memory'
+import { SkeletonRows } from '../Skeleton'
 
 const CATEGORY_COLORS: Record<string, string> = {
   semantic: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -42,12 +43,7 @@ export default function MemoryViewer() {
         What the concierge remembers about you across sessions.
       </p>
 
-      {isLoading && (
-        <div className="flex items-center justify-center py-6">
-          <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
-          <span className="ml-2 text-sm text-gray-400">Loading memories...</span>
-        </div>
-      )}
+      {isLoading && <SkeletonRows count={3} />}
 
       {isError && (
         <p className="text-sm text-red-500 text-center py-4">

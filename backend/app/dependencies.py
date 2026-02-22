@@ -13,12 +13,12 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 
-async def get_redis() -> AsyncGenerator[aioredis.Redis, None]:
-    client = get_redis_client()
-    try:
-        yield client
-    finally:
-        await client.aclose()
+def get_redis() -> aioredis.Redis:
+    """Return a Redis client backed by the shared connection pool.
+
+    The pool manages connection lifecycle, so we do not close the client per request.
+    """
+    return get_redis_client()
 
 
 def get_settings() -> Settings:

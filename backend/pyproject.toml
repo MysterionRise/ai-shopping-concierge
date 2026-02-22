@@ -79,7 +79,6 @@ addopts = "--strict-markers -v"
 [tool.coverage.run]
 source = ["app"]
 omit = [
-    "app/persona/*",
     "*/tests/*",
     "app/core/vector_store.py",
     "app/catalog/openbf_client.py",

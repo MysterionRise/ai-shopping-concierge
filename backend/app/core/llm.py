@@ -1,8 +1,10 @@
+import asyncio
+from collections.abc import AsyncIterator
 from typing import Any
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, BaseMessage
-from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_openai import ChatOpenAI
 from pydantic import SecretStr
 
@@ -37,6 +39,28 @@ class DemoChatModel(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         return self._generate(messages, stop, run_manager=run_manager, **kwargs)
+
+    async def _astream(
+        self,
+        messages: list[BaseMessage],
+        stop: list[str] | None = None,
+        run_manager: Any = None,
+        **kwargs: Any,
+    ) -> AsyncIterator[ChatGenerationChunk]:
+        """Yield response token-by-token to simulate real LLM streaming."""
+        full_response = self._pick_response(messages)
+        words = [w for w in full_response.split(" ") if w]
+        last_idx = len(words) - 1
+        for i, word in enumerate(words):
+            token = word if i == 0 else " " + word
+            is_last = i == last_idx
+            msg = AIMessageChunk(content=token, chunk_position="last" if is_last else None)
+            chunk = ChatGenerationChunk(message=msg)
+            if run_manager:
+                await run_manager.on_llm_new_token(token, chunk=chunk)
+            yield chunk
+            if not is_last:
+                await asyncio.sleep(0.025)
 
     def _pick_response(self, messages: list[BaseMessage]) -> str:
         system = ""
@@ -77,23 +101,51 @@ class DemoChatModel(BaseChatModel):
             product_type = "moisturizer"
             properties = "hydrating"
             skin_type = "unknown"
+            brand_preference = "unknown"
+            format_preference = "unknown"
             if "serum" in user:
                 product_type = "serum"
+                format_preference = "serum"
             elif "cleanser" in user:
                 product_type = "cleanser"
+                format_preference = "foam"
             elif "sunscreen" in user:
                 product_type = "sunscreen"
                 properties = "SPF 50, lightweight"
+                format_preference = "lotion"
             if "oily" in user:
                 skin_type = "oily"
                 properties = "oil-free, lightweight"
             elif "dry" in user:
                 skin_type = "dry"
                 properties = "rich, hydrating"
+                format_preference = "cream"
             elif "sensitive" in user:
                 skin_type = "sensitive"
                 properties = "fragrance-free, gentle"
-            return f"product_type: {product_type}\nproperties: {properties}\nskin_type: {skin_type}"
+            # Detect brand mentions
+            for brand in [
+                "cerave",
+                "la roche-posay",
+                "the ordinary",
+                "neutrogena",
+                "cetaphil",
+            ]:
+                if brand in user:
+                    brand_preference = brand.title()
+                    break
+            # Detect format mentions
+            for fmt in ["cream", "gel", "oil", "lotion", "foam", "mist", "balm"]:
+                if fmt in user:
+                    format_preference = fmt
+                    break
+            return (
+                f"product_type: {product_type}\n"
+                f"properties: {properties}\n"
+                f"skin_type: {skin_type}\n"
+                f"brand_preference: {brand_preference}\n"
+                f"format_preference: {format_preference}"
+            )
 
         # Safety checker
         if "safety checker" in system:

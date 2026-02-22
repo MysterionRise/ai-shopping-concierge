@@ -178,5 +178,9 @@ chroma_data/
 # Alembic
 backend/alembic/versions/*.pyc
 
+# Session tracking notes
+SESSION-INDEX.md
+phase-2*-sessions.md
+
 # OS files
 .DS_Store

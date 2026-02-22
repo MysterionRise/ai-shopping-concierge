@@ -6,6 +6,7 @@ import AlertBanner from './AlertBanner'
 import { usePersonaStore } from '../../stores/personaStore'
 import { useChatStore } from '../../stores/chatStore'
 import { usePersonaStream } from '../../hooks/usePersonaStream'
+import { SkeletonRows } from '../Skeleton'
 
 const TRAIT_DEFINITIONS = [
   {
@@ -37,7 +38,7 @@ const TRAIT_DEFINITIONS = [
 
 export default function PersonaMonitor() {
   const conversationId = useChatStore((s) => s.currentConversationId)
-  const { currentScores, scoreHistory, fetchHistory, fetchAlerts, alerts } =
+  const { currentScores, scoreHistory, fetchHistory, fetchAlerts, alerts, isLoading } =
     usePersonaStore()
 
   // Connect to SSE stream for real-time updates
@@ -100,24 +101,32 @@ export default function PersonaMonitor() {
           <h2 className="text-lg font-medium text-gray-900 mb-4">
             Current Trait Scores
           </h2>
-          <div className="space-y-4">
-            {TRAIT_DEFINITIONS.map((trait) => (
-              <TraitGauge
-                key={trait.name}
-                name={trait.name}
-                score={scores[trait.name] || 0}
-                threshold={trait.threshold}
-                description={trait.description}
-              />
-            ))}
-          </div>
+          {isLoading ? (
+            <SkeletonRows count={5} />
+          ) : (
+            <div className="space-y-4">
+              {TRAIT_DEFINITIONS.map((trait) => (
+                <TraitGauge
+                  key={trait.name}
+                  name={trait.name}
+                  score={scores[trait.name] || 0}
+                  threshold={trait.threshold}
+                  description={trait.description}
+                />
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-lg font-medium text-gray-900 mb-4">
             Trait Drift Over Conversation
           </h2>
-          <DriftChart history={normalizedHistory} />
+          {isLoading ? (
+            <SkeletonRows count={3} />
+          ) : (
+            <DriftChart history={normalizedHistory} />
+          )}
         </section>
       </div>
     </div>

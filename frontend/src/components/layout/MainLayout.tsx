@@ -8,7 +8,7 @@ export default function MainLayout() {
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-hidden">
+        <main className="flex-1 overflow-hidden animate-fade-in">
           <Outlet />
         </main>
       </div>

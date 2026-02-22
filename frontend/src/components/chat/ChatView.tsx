@@ -32,6 +32,7 @@ export default function ChatView() {
             isTyping={isTyping}
             streamingContent={streamingContent}
             streamingProducts={streamingProducts}
+            onSend={(text) => sendMessage(text, true)}
           />
           <ChatInput onSend={(text) => sendMessage(text, true)} disabled={isTyping} />
         </div>

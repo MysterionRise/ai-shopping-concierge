@@ -2,7 +2,7 @@ import uuid
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,7 +15,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 class UserCreate(BaseModel):
-    display_name: str
+    display_name: str = Field(..., min_length=1, max_length=255)
     skin_type: str | None = None
     skin_concerns: list[str] = []
     allergies: list[str] = []
@@ -24,7 +24,7 @@ class UserCreate(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    display_name: str | None = None
+    display_name: str | None = Field(None, min_length=1, max_length=255)
     skin_type: str | None = None
     skin_concerns: list[str] | None = None
     allergies: list[str] | None = None
@@ -42,6 +42,24 @@ class UserResponse(BaseModel):
     memory_enabled: bool
 
     model_config = {"from_attributes": True}
+
+
+@router.get("", response_model=list[UserResponse])
+async def list_users(db: AsyncSession = Depends(get_db_session)):
+    result = await db.execute(select(User).order_by(User.display_name))
+    users = result.scalars().all()
+    return [
+        UserResponse(
+            id=str(u.id),
+            display_name=u.display_name,
+            skin_type=u.skin_type,
+            skin_concerns=list(u.skin_concerns or []),
+            allergies=list(u.allergies or []),
+            preferences=u.preferences or {},
+            memory_enabled=u.memory_enabled,
+        )
+        for u in users
+    ]
 
 
 @router.post("", response_model=UserResponse)

@@ -1,11 +1,26 @@
-import { useState } from 'react'
-import { AlertTriangle, Plus, X } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { AlertTriangle, Plus, X, Loader2, Check } from 'lucide-react'
 import { useUserStore } from '../../stores/userStore'
+import { useUpdateUser } from '../../hooks/useUser'
 
 export default function AllergyManager() {
   const user = useUserStore((s) => s.user)
+  const setUser = useUserStore((s) => s.setUser)
   const [allergies, setAllergies] = useState<string[]>(user?.allergies || [])
   const [newAllergy, setNewAllergy] = useState('')
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const updateUser = useUpdateUser()
+  const prevUserIdRef = useRef(user?.id)
+
+  // Reset local state when the user identity changes (e.g. user selector switch)
+  if (user?.id !== prevUserIdRef.current) {
+    prevUserIdRef.current = user?.id
+    setAllergies(user?.allergies || [])
+  }
+
+  const isDirty =
+    JSON.stringify([...allergies].sort()) !==
+    JSON.stringify([...(user?.allergies || [])].sort())
 
   const addAllergy = () => {
     const trimmed = newAllergy.trim().toLowerCase()
@@ -17,6 +32,21 @@ export default function AllergyManager() {
 
   const removeAllergy = (allergy: string) => {
     setAllergies(allergies.filter((a) => a !== allergy))
+  }
+
+  const handleSave = () => {
+    if (!user || !isDirty) return
+    setSaveSuccess(false)
+    updateUser.mutate(
+      { userId: user.id, data: { allergies } },
+      {
+        onSuccess: (updated) => {
+          setUser(updated)
+          setSaveSuccess(true)
+          setTimeout(() => setSaveSuccess(false), 2000)
+        },
+      },
+    )
   }
 
   return (
@@ -68,6 +98,33 @@ export default function AllergyManager() {
           <span className="text-sm text-gray-400">No allergies added yet</span>
         )}
       </div>
+
+      {isDirty && (
+        <div className="flex items-center gap-3 mt-4 pt-4 border-t border-red-100">
+          <button
+            onClick={handleSave}
+            disabled={updateUser.isPending}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+          >
+            {updateUser.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : null}
+            {updateUser.isPending ? 'Saving...' : 'Save Allergies'}
+          </button>
+          {updateUser.isError && (
+            <span className="text-sm text-red-600">
+              Failed to save. Please try again.
+            </span>
+          )}
+        </div>
+      )}
+
+      {saveSuccess && !isDirty && (
+        <div className="flex items-center gap-2 mt-3 text-sm text-green-600">
+          <Check className="w-4 h-4" />
+          Allergies saved successfully.
+        </div>
+      )}
     </section>
   )
 }

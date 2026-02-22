@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { updateUser } from '../../api/users'
+import { useState, useRef } from 'react'
+import { Check, Loader2 } from 'lucide-react'
 import { useUserStore } from '../../stores/userStore'
+import { useUpdateUser } from '../../hooks/useUser'
 import AllergyManager from './AllergyManager'
 import MemoryViewer from './MemoryViewer'
 
@@ -22,7 +23,22 @@ export default function UserProfile() {
   const [skinType, setSkinType] = useState(user?.skinType || '')
   const [concerns, setConcerns] = useState<string[]>(user?.skinConcerns || [])
   const [memoryEnabled, setMemoryEnabled] = useState(user?.memoryEnabled ?? true)
-  const [toggling, setToggling] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
+  const updateUser = useUpdateUser()
+  const prevUserIdRef = useRef(user?.id)
+
+  // Reset local state when the user identity changes (e.g. user selector switch)
+  if (user?.id !== prevUserIdRef.current) {
+    prevUserIdRef.current = user?.id
+    setSkinType(user?.skinType || '')
+    setConcerns(user?.skinConcerns || [])
+    setMemoryEnabled(user?.memoryEnabled ?? true)
+  }
+
+  const isDirty =
+    skinType !== (user?.skinType || '') ||
+    JSON.stringify([...concerns].sort()) !==
+      JSON.stringify([...(user?.skinConcerns || [])].sort())
 
   const toggleConcern = (concern: string) => {
     setConcerns((prev) =>
@@ -32,18 +48,32 @@ export default function UserProfile() {
     )
   }
 
-  const handleMemoryToggle = async () => {
-    if (!user || toggling) return
-    setToggling(true)
-    try {
-      const updated = await updateUser(user.id, { memoryEnabled: !memoryEnabled })
-      setMemoryEnabled(updated.memoryEnabled)
-      setUser(updated)
-    } catch {
-      // Revert on error
-    } finally {
-      setToggling(false)
-    }
+  const handleSave = () => {
+    if (!user || !isDirty) return
+    setSaveSuccess(false)
+    updateUser.mutate(
+      { userId: user.id, data: { skinType, skinConcerns: concerns } },
+      {
+        onSuccess: (updated) => {
+          setUser(updated)
+          setSaveSuccess(true)
+          setTimeout(() => setSaveSuccess(false), 2000)
+        },
+      },
+    )
+  }
+
+  const handleMemoryToggle = () => {
+    if (!user || updateUser.isPending) return
+    updateUser.mutate(
+      { userId: user.id, data: { memoryEnabled: !memoryEnabled } },
+      {
+        onSuccess: (updated) => {
+          setMemoryEnabled(updated.memoryEnabled)
+          setUser(updated)
+        },
+      },
+    )
   }
 
   return (
@@ -98,6 +128,35 @@ export default function UserProfile() {
           </div>
         </section>
 
+        {isDirty && (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSave}
+              disabled={updateUser.isPending}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary-500 text-white hover:bg-primary-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
+            >
+              {updateUser.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : saveSuccess ? (
+                <Check className="w-4 h-4" />
+              ) : null}
+              {updateUser.isPending ? 'Saving...' : saveSuccess ? 'Saved!' : 'Save Changes'}
+            </button>
+            {updateUser.isError && (
+              <span className="text-sm text-red-600">
+                Failed to save. Please try again.
+              </span>
+            )}
+          </div>
+        )}
+
+        {saveSuccess && !isDirty && (
+          <div className="flex items-center gap-2 text-sm text-green-600">
+            <Check className="w-4 h-4" />
+            Profile saved successfully.
+          </div>
+        )}
+
         <section className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -112,10 +171,10 @@ export default function UserProfile() {
             </div>
             <button
               onClick={handleMemoryToggle}
-              disabled={toggling}
+              disabled={updateUser.isPending}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ml-4 ${
                 memoryEnabled ? 'bg-primary-500' : 'bg-gray-300'
-              } ${toggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              } ${updateUser.isPending ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
               role="switch"
               aria-checked={memoryEnabled}
               aria-label="Allow AI to remember conversations"

@@ -1,6 +1,19 @@
 import { User } from '../types'
 import { apiFetch } from './client'
 
+export async function listUsers(): Promise<User[]> {
+  const data = await apiFetch<Record<string, unknown>[]>('/users')
+  return data.map((d) => ({
+    id: d.id as string,
+    displayName: d.display_name as string,
+    skinType: d.skin_type as string | null,
+    skinConcerns: d.skin_concerns as string[],
+    allergies: d.allergies as string[],
+    preferences: d.preferences as Record<string, unknown>,
+    memoryEnabled: (d.memory_enabled as boolean) ?? true,
+  }))
+}
+
 export async function getUser(userId: string): Promise<User> {
   const data = await apiFetch<Record<string, unknown>>(`/users/${userId}`)
   return {

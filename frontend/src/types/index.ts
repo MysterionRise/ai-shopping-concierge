@@ -3,6 +3,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
   agentName?: string
+  intent?: string
   products?: ProductCard[]
   safetyViolations?: SafetyViolation[]
   timestamp: string
@@ -69,4 +70,11 @@ export interface ChatResponse {
   safety_violations: SafetyViolation[]
   product_count: number
   products: Record<string, unknown>[]
+}
+
+export interface Conversation {
+  id: string
+  userId: string
+  title: string | null
+  createdAt: string
 }

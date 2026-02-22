@@ -78,6 +78,16 @@ async def lifespan(app: FastAPI):
     # Compile graph with checkpointer and store
     app.state.graph = compile_graph(checkpointer, store=store)
 
+    # Auto-seed product catalog if empty
+    try:
+        from app.catalog.auto_seed import auto_seed_catalog
+        from app.core.database import async_session_factory
+
+        async with async_session_factory() as session:
+            await auto_seed_catalog(session)
+    except Exception as e:
+        logger.warning("Auto-seed failed (non-fatal)", error=str(e))
+
     yield
 
     if store_cm is not None:

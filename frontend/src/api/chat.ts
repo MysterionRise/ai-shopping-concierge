@@ -1,4 +1,4 @@
-import { ChatResponse, ProductCard } from '../types'
+import { ChatResponse, ProductCard, SafetyViolation } from '../types'
 import { apiFetch, apiStreamUrl } from './client'
 
 export async function sendMessage(
@@ -33,12 +33,18 @@ export function parseBackendProduct(p: any): ProductCard {
   }
 }
 
+export interface StreamDoneData {
+  conversationId: string
+  intent?: string
+  safetyViolations?: SafetyViolation[]
+}
+
 export function createSSEConnection(
   message: string,
   userId: string,
   conversationId: string | undefined,
   onToken: (token: string) => void,
-  onDone: (conversationId: string) => void,
+  onDone: (data: StreamDoneData) => void,
   onError: (error: string) => void,
   onProducts?: (products: ProductCard[]) => void,
 ): AbortController {
@@ -85,8 +91,13 @@ export function createSSEConnection(
               else if (data.type === 'products' && onProducts) {
                 const products = (data.products || []).map(parseBackendProduct)
                 onProducts(products)
-              } else if (data.type === 'done') onDone(data.conversation_id || '')
-              else if (data.type === 'error') onError(data.content)
+              } else if (data.type === 'done') {
+                onDone({
+                  conversationId: data.conversation_id || '',
+                  intent: data.intent,
+                  safetyViolations: data.safety_violations,
+                })
+              } else if (data.type === 'error') onError(data.content)
             } catch {
               // Skip malformed SSE data
             }

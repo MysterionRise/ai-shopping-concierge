@@ -27,24 +27,6 @@ def get_user_constraints(user: User) -> tuple[list[str], list[str]]:
     return hard_constraints, soft_preferences
 
 
-async def get_hard_constraints(db: AsyncSession, user_id: str) -> list[str]:
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalar_one_or_none()
-    if not user:
-        return []
-    constraints, _ = get_user_constraints(user)
-    return constraints
-
-
-async def get_soft_preferences(db: AsyncSession, user_id: str) -> list[str]:
-    result = await db.execute(select(User).where(User.id == user_id))
-    user = result.scalar_one_or_none()
-    if not user:
-        return []
-    _, preferences = get_user_constraints(user)
-    return preferences
-
-
 async def add_constraint(db: AsyncSession, user_id: str, constraint: str, is_hard: bool = True):
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()

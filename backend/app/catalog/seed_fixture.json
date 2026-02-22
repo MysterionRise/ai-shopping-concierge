@@ -1,0 +1,527 @@
+[
+  {
+    "openbf_code": "SEED001",
+    "name": "CeraVe Moisturizing Cream",
+    "brand": "CeraVe",
+    "categories": ["moisturizers", "face care", "body care"],
+    "ingredients_text": "Aqua, Glycerin, Cetearyl Alcohol, Caprylic/Capric Triglyceride, Cetyl Alcohol, Ceteareth-20, Petrolatum, Potassium Phosphate, Ceramide NP, Ceramide AP, Ceramide EOP, Carbomer, Dimethicone, Behentrimonium Methosulfate, Sodium Lauroyl Lactylate, Sodium Hyaluronate, Cholesterol, Phenoxyethanol, Disodium EDTA, Dipotassium Phosphate, Tocopherol, Phytosphingosine, Xanthan Gum"
+  },
+  {
+    "openbf_code": "SEED002",
+    "name": "La Roche-Posay Toleriane Double Repair Moisturizer",
+    "brand": "La Roche-Posay",
+    "categories": ["moisturizers", "sensitive skin", "face care"],
+    "ingredients_text": "Aqua, Glycerin, Cetearyl Alcohol, Mineral Oil, Dimethicone, Niacinamide, Glyceryl Stearate, PEG-100 Stearate, Ceramide NP, Tocopherol, Shea Butter, Propanediol, Sodium Hyaluronate, Phenoxyethanol, Chlorhexidine Digluconate"
+  },
+  {
+    "openbf_code": "SEED003",
+    "name": "Neutrogena Hydro Boost Water Gel",
+    "brand": "Neutrogena",
+    "categories": ["moisturizers", "gel cream", "hydrating"],
+    "ingredients_text": "Aqua, Dimethicone, Glycerin, Cetearyl Olivate, Sorbitan Olivate, Dimethicone/Vinyl Dimethicone Crosspolymer, Sodium Hyaluronate, Polyacrylamide, Ethylhexylglycerin, C13-14 Isoparaffin, Dimethicone Copolyol, Chlorphenesin, Carbomer, Laureth-7, Fragrance, Sodium Hydroxide, Blue 1"
+  },
+  {
+    "openbf_code": "SEED004",
+    "name": "Olay Regenerist Micro-Sculpting Cream",
+    "brand": "Olay",
+    "categories": ["moisturizers", "anti-aging", "face care"],
+    "ingredients_text": "Aqua, Glycerin, Niacinamide, Isohexadecane, Aluminum Starch Octenylsuccinate, Panthenol, Dimethicone, Tocopheryl Acetate, Palmitoyl Pentapeptide-4, Camellia Sinensis Leaf Extract, Allantoin, Methylparaben, Ethylparaben, Propylparaben, Fragrance, Titanium Dioxide, PEG-100 Stearate, Cetearyl Alcohol, Benzyl Alcohol"
+  },
+  {
+    "openbf_code": "SEED005",
+    "name": "Clinique Dramatically Different Moisturizing Lotion+",
+    "brand": "Clinique",
+    "categories": ["moisturizers", "face care", "daily care"],
+    "ingredients_text": "Aqua, Mineral Oil, Glycerin, Petrolatum, Stearic Acid, Glyceryl Stearate, Sesame Oil, Serica, Urea, Sodium Hyaluronate, Tocopheryl Acetate, Triisocetyl Citrate, Lecithin, Carbomer, Phenoxyethanol, Triethanolamine, Yellow 6, Red 33"
+  },
+  {
+    "openbf_code": "SEED006",
+    "name": "First Aid Beauty Ultra Repair Cream",
+    "brand": "First Aid Beauty",
+    "categories": ["moisturizers", "sensitive skin", "body care"],
+    "ingredients_text": "Aqua, Stearic Acid, Glycerin, C12-15 Alkyl Benzoate, Caprylic/Capric Triglyceride, Glyceryl Stearate SE, Cetearyl Alcohol, Colloidal Oatmeal, Allantoin, Ceramide NP, Eucalyptus Globulus Leaf Oil, Camellia Sinensis Leaf Extract, Chrysanthemum Parthenium Extract, Glycyrrhiza Glabra Root Extract, Phenoxyethanol, Sodium Hydroxide, Xanthan Gum"
+  },
+  {
+    "openbf_code": "SEED007",
+    "name": "Tatcha The Dewy Skin Cream",
+    "brand": "Tatcha",
+    "categories": ["moisturizers", "luxury", "hydrating"],
+    "ingredients_text": "Aqua, Glycerin, Squalane, Dipropylene Glycol, Butylene Glycol, Camellia Japonica Seed Oil, Oryza Sativa Bran Extract, Algae Extract, Camellia Sinensis Leaf Extract, Hyaluronic Acid, Ceramide NP, Tocopherol, Dimethicone, Sodium Polyacrylate, Phenoxyethanol, Ethylhexylglycerin"
+  },
+  {
+    "openbf_code": "SEED008",
+    "name": "Cetaphil Daily Hydrating Lotion",
+    "brand": "Cetaphil",
+    "categories": ["moisturizers", "sensitive skin", "daily care"],
+    "ingredients_text": "Aqua, Glycerin, Hydrogenated Polyisobutene, Cetearyl Alcohol, Ceteareth-20, Macadamia Integrifolia Seed Oil, Dimethicone, Sodium Hyaluronate, Panthenol, Niacinamide, Tocopheryl Acetate, Citric Acid, Phenoxyethanol"
+  },
+  {
+    "openbf_code": "SEED009",
+    "name": "Nivea Soft Moisturizing Creme",
+    "brand": "Nivea",
+    "categories": ["moisturizers", "body care", "face care"],
+    "ingredients_text": "Aqua, Caprylic/Capric Triglyceride, Glycerin, Cetearyl Alcohol, Myristyl Myristate, Glyceryl Stearate, Dimethicone, Tocopheryl Acetate, Lanolin, Fragrance, Methylparaben, Propylparaben, Carbomer, Sodium Hydroxide"
+  },
+  {
+    "openbf_code": "SEED010",
+    "name": "Kiehl's Ultra Facial Cream",
+    "brand": "Kiehl's",
+    "categories": ["moisturizers", "face care", "hydrating"],
+    "ingredients_text": "Aqua, Squalane, Glycerin, Sucrose Stearate, Bis-PEG-18 Methyl Ether Dimethyl Silane, Stearyl Alcohol, Myristyl Myristate, Pentaerythrityl Tetraethylhexanoate, Prunus Armeniaca Kernel Oil, Persea Gratissima Oil, Phenoxyethanol, Chlorphenesin, Desmodium Adscendens Leaf Extract, Camellia Sinensis Leaf Extract"
+  },
+  {
+    "openbf_code": "SEED011",
+    "name": "CeraVe Hydrating Facial Cleanser",
+    "brand": "CeraVe",
+    "categories": ["cleansers", "face care", "sensitive skin"],
+    "ingredients_text": "Aqua, Glycerin, Cetearyl Alcohol, PEG-40 Stearate, Stearyl Alcohol, Ceramide NP, Ceramide AP, Ceramide EOP, Carbomer, Cetyl Alcohol, Behentrimonium Methosulfate, Sodium Lauroyl Lactylate, Sodium Hyaluronate, Cholesterol, Phytosphingosine, Phenoxyethanol, Disodium EDTA, Potassium Phosphate, Dipotassium Phosphate"
+  },
+  {
+    "openbf_code": "SEED012",
+    "name": "La Roche-Posay Effaclar Purifying Foaming Gel",
+    "brand": "La Roche-Posay",
+    "categories": ["cleansers", "oily skin", "acne care"],
+    "ingredients_text": "Aqua, Sodium Laureth Sulfate, PEG-8, Coco-Betaine, Hexylene Glycol, Sodium Chloride, PEG-120 Methyl Glucose Dioleate, Zinc PCA, Glycerin, Citric Acid, Sodium Hydroxide, Niacinamide, Phenoxyethanol"
+  },
+  {
+    "openbf_code": "SEED013",
+    "name": "Cetaphil Gentle Skin Cleanser",
+    "brand": "Cetaphil",
+    "categories": ["cleansers", "sensitive skin", "face care"],
+    "ingredients_text": "Aqua, Cetyl Alcohol, Propylene Glycol, Sodium Lauryl Sulfate, Stearyl Alcohol, Methylparaben, Propylparaben, Butylparaben"
+  },
+  {
+    "openbf_code": "SEED014",
+    "name": "Fresh Soy Face Cleanser",
+    "brand": "Fresh",
+    "categories": ["cleansers", "face care", "gentle"],
+    "ingredients_text": "Aqua, Glycerin, Sodium Cocoyl Isethionate, Stearic Acid, Glycine Soja Seed Extract, Cucumis Sativus Fruit Extract, Rosa Damascena Flower Water, Tocopheryl Acetate, Aloe Barbadensis Leaf Juice, Sodium PCA, Phenoxyethanol, Ethylhexylglycerin"
+  },
+  {
+    "openbf_code": "SEED015",
+    "name": "Garnier SkinActive Micellar Water",
+    "brand": "Garnier",
+    "categories": ["cleansers", "micellar water", "makeup remover"],
+    "ingredients_text": "Aqua, Hexylene Glycol, Glycerin, Disodium Cocoamphodiacetate, Disodium EDTA, Poloxamer 184, Polyaminopropyl Biguanide"
+  },
+  {
+    "openbf_code": "SEED016",
+    "name": "Philosophy Purity Made Simple Cleanser",
+    "brand": "Philosophy",
+    "categories": ["cleansers", "face care", "all skin types"],
+    "ingredients_text": "Aqua, Sodium Cocoyl Glutamate, Acrylates Copolymer, Glycerin, Olea Europaea Fruit Oil, Sesamum Indicum Seed Oil, Rosa Canina Fruit Oil, Tocopheryl Acetate, Chamomilla Recutita Flower Extract, Phenoxyethanol, Ethylhexylglycerin, Fragrance"
+  },
+  {
+    "openbf_code": "SEED017",
+    "name": "Neutrogena Oil-Free Acne Wash",
+    "brand": "Neutrogena",
+    "categories": ["cleansers", "acne care", "oily skin"],
+    "ingredients_text": "Salicylic Acid, Aqua, Sodium C14-16 Olefin Sulfonate, Cocamidopropyl Betaine, Sodium Chloride, Acrylates/Steareth-20 Methacrylate Copolymer, PEG-80 Sorbitan Laurate, Aloe Barbadensis Leaf Extract, Chamomilla Recutita Flower Extract, Fragrance, DMDM Hydantoin, Menthol, C12-15 Alkyl Lactate, Disodium EDTA, Yellow 5, Red 40"
+  },
+  {
+    "openbf_code": "SEED018",
+    "name": "Drunk Elephant Beste No. 9 Jelly Cleanser",
+    "brand": "Drunk Elephant",
+    "categories": ["cleansers", "face care", "gentle"],
+    "ingredients_text": "Aqua, Glycerin, Coco-Glucoside, Sodium Cocoyl Isethionate, Cocamidopropyl Betaine, Sodium Methyl Cocoyl Taurate, Aloe Barbadensis Leaf Juice, Cantella Asiatica Extract, Helianthus Annuus Seed Oil, Cucumis Melo Fruit Extract, Sclerocarya Birrea Seed Oil, Blighia Sapida Seed Oil, Glycolipids, Phenoxyethanol, Ethylhexylglycerin"
+  },
+  {
+    "openbf_code": "SEED019",
+    "name": "Bioderma Sensibio H2O Micellar Water",
+    "brand": "Bioderma",
+    "categories": ["cleansers", "micellar water", "sensitive skin"],
+    "ingredients_text": "Aqua, PEG-6 Caprylic/Capric Glycerides, Fructooligosaccharides, Mannitol, Xylitol, Rhamnose, Cucumis Sativus Fruit Extract, Propylene Glycol, Cetrimonium Bromide, Disodium EDTA"
+  },
+  {
+    "openbf_code": "SEED020",
+    "name": "Youth to the People Superfood Cleanser",
+    "brand": "Youth to the People",
+    "categories": ["cleansers", "face care", "antioxidant"],
+    "ingredients_text": "Aqua, Sodium Cocoyl Glutamate, Cocamidopropyl Hydroxysultaine, Glycerin, Spinacia Oleracea Leaf Extract, Brassica Oleracea Italica Extract, Camellia Sinensis Leaf Extract, Aloe Barbadensis Leaf Juice, Panthenol, Tocopherol, Phenoxyethanol, Citric Acid"
+  },
+  {
+    "openbf_code": "SEED021",
+    "name": "The Ordinary Hyaluronic Acid 2% + B5",
+    "brand": "The Ordinary",
+    "categories": ["serums", "hydrating", "face care"],
+    "ingredients_text": "Aqua, Sodium Hyaluronate, Pentylene Glycol, Propanediol, Sodium Hyaluronate Crosspolymer, Panthenol, Ahnfeltia Concinna Extract, Glycerin, Trisodium Ethylenediamine Disuccinate, Citric Acid, Isoceteth-20, Ethoxydiglycol, Ethylhexylglycerin, Hexylene Glycol, Phenoxyethanol, Caprylyl Glycol"
+  },
+  {
+    "openbf_code": "SEED022",
+    "name": "The Ordinary Niacinamide 10% + Zinc 1%",
+    "brand": "The Ordinary",
+    "categories": ["serums", "blemish control", "face care"],
+    "ingredients_text": "Aqua, Niacinamide, Pentylene Glycol, Zinc PCA, Dimethyl Isosorbide, Tamarindus Indica Seed Gum, Xanthan Gum, Isoceteth-20, Ethoxydiglycol, Phenoxyethanol, Chlorphenesin"
+  },
+  {
+    "openbf_code": "SEED023",
+    "name": "SkinCeuticals C E Ferulic Serum",
+    "brand": "SkinCeuticals",
+    "categories": ["serums", "antioxidant", "anti-aging"],
+    "ingredients_text": "Aqua, Ethoxydiglycol, Ascorbic Acid, Glycerin, Propylene Glycol, Laureth-23, Tocopherol, Ferulic Acid, Panthenol, Sodium Hyaluronate, Phenoxyethanol, Triethanolamine"
+  },
+  {
+    "openbf_code": "SEED024",
+    "name": "Paula's Choice 2% BHA Liquid Exfoliant",
+    "brand": "Paula's Choice",
+    "categories": ["serums", "exfoliators", "blemish control"],
+    "ingredients_text": "Aqua, Methylpropanediol, Butylene Glycol, Salicylic Acid, Polysorbate 20, Camellia Oleifera Leaf Extract, Sodium Hydroxide, Tetrasodium EDTA"
+  },
+  {
+    "openbf_code": "SEED025",
+    "name": "Estee Lauder Advanced Night Repair Serum",
+    "brand": "Estee Lauder",
+    "categories": ["serums", "anti-aging", "night care"],
+    "ingredients_text": "Aqua, Bifida Ferment Lysate, Methyl Gluceth-20, PEG-75, Bis-PEG-18 Methyl Ether Dimethyl Silane, Butylene Glycol, Propanediol, Cola Acuminata Seed Extract, Sodium Hyaluronate, Acetyl Hexapeptide-8, Lactobacillus Ferment, Panthenol, Caffeine, Tocopheryl Acetate, Lecithin, Sodium RNA, Oleth-3 Phosphate, Hydrogenated Lecithin, Glyceryl Stearate, Tripeptide-32, Phenoxyethanol, Fragrance"
+  },
+  {
+    "openbf_code": "SEED026",
+    "name": "The Ordinary Retinol 0.5% in Squalane",
+    "brand": "The Ordinary",
+    "categories": ["serums", "retinol", "anti-aging"],
+    "ingredients_text": "Squalane, Caprylic/Capric Triglyceride, Retinol, Solanum Lycopersicum Fruit Extract, Rosmarinus Officinalis Leaf Extract, Tocopherol, BHT"
+  },
+  {
+    "openbf_code": "SEED027",
+    "name": "Drunk Elephant T.L.C. Framboos Glycolic Night Serum",
+    "brand": "Drunk Elephant",
+    "categories": ["serums", "exfoliators", "night care"],
+    "ingredients_text": "Aqua, Glycolic Acid, Butylene Glycol, Glycerin, Sodium Hydroxide, Salicylic Acid, Lactic Acid, Citric Acid, Vitis Vinifera Juice Extract, Aloe Barbadensis Leaf Juice, Opuntia Ficus-Indica Extract, Arachidyl Glucoside, Horse Chestnut Extract, Sodium Hyaluronate, Camellia Sinensis Leaf Extract, Hydroxyethylcellulose, Xanthan Gum, Phenoxyethanol"
+  },
+  {
+    "openbf_code": "SEED028",
+    "name": "Vichy Mineral 89 Hyaluronic Acid Serum",
+    "brand": "Vichy",
+    "categories": ["serums", "hydrating", "face care"],
+    "ingredients_text": "Aqua, Glycerin, Dimethicone, Sodium Hyaluronate, Hydroxypropyl Tetrahydropyrantriol, Caffeine, Citric Acid, Sodium Citrate, Caprylyl Glycol, Phenoxyethanol"
+  },
+  {
+    "openbf_code": "SEED029",
+    "name": "Ole Henriksen Truth Serum",
+    "brand": "Ole Henriksen",
+    "categories": ["serums", "vitamin C", "brightening"],
+    "ingredients_text": "Aqua, Ascorbic Acid, Glycerin, Propanediol, Rosa Canina Fruit Oil, Collagen, Aloe Barbadensis Leaf Juice, Sodium Hyaluronate, Orange Peel Extract, Camellia Sinensis Leaf Extract, Niacinamide, Tocopherol, Phenoxyethanol, Fragrance, Limonene, Linalool"
+  },
+  {
+    "openbf_code": "SEED030",
+    "name": "Glow Recipe Watermelon Glow Niacinamide Dew Drops",
+    "brand": "Glow Recipe",
+    "categories": ["serums", "brightening", "hydrating"],
+    "ingredients_text": "Aqua, Propanediol, Glycerin, Niacinamide, Citrullus Lanatus Fruit Extract, Sodium Hyaluronate, Moringa Pterygosperma Seed Extract, Betaine, Panthenol, Allantoin, Glyceryl Acrylate/Acrylic Acid Copolymer, Phenoxyethanol, Ethylhexylglycerin"
+  },
+  {
+    "openbf_code": "SEED031",
+    "name": "EltaMD UV Clear Broad-Spectrum SPF 46",
+    "brand": "EltaMD",
+    "categories": ["sunscreens", "face care", "sensitive skin"],
+    "ingredients_text": "Zinc Oxide, Octinoxate, Aqua, Niacinamide, Hyaluronic Acid, Lactic Acid, Tocopheryl Acetate, Oleth-3 Phosphate, Dimethicone, Cyclomethicone, Phenoxyethanol, Glycerin, Sodium Chloride, Ceteareth-20, BHT"
+  },
+  {
+    "openbf_code": "SEED032",
+    "name": "La Roche-Posay Anthelios Melt-In Sunscreen SPF 60",
+    "brand": "La Roche-Posay",
+    "categories": ["sunscreens", "face care", "body care"],
+    "ingredients_text": "Aqua, Homosalate, Ethylhexyl Salicylate, Butyl Methoxydibenzoylmethane, Octocrylene, Glycerin, Silica, Styrene/Acrylates Copolymer, Dimethicone, PEG-30 Dipolyhydroxystearate, Tocopherol, Phenoxyethanol, Triethanolamine"
+  },
+  {
+    "openbf_code": "SEED033",
+    "name": "Supergoop Unseen Sunscreen SPF 40",
+    "brand": "Supergoop",
+    "categories": ["sunscreens", "face care", "primer"],
+    "ingredients_text": "Avobenzone, Homosalate, Octisalate, Octocrylene, Dimethicone, Dimethicone/Vinyl Dimethicone Crosspolymer, C12-15 Alkyl Benzoate, Diisopropyl Sebacate, Glycerin, Meadowfoam Seed Oil, Camellia Oleifera Leaf Extract, Rosmarinus Officinalis Leaf Extract, Phenoxyethanol, Ethylhexylglycerin"
+  },
+  {
+    "openbf_code": "SEED034",
+    "name": "Neutrogena Ultra Sheer Dry-Touch SPF 55",
+    "brand": "Neutrogena",
+    "categories": ["sunscreens", "face care", "lightweight"],
+    "ingredients_text": "Avobenzone, Homosalate, Octisalate, Octocrylene, Oxybenzone, Aqua, Sorbitol, Silica, Diethylhexyl 2,6-Naphthalate, Styrene/Acrylates Copolymer, Dimethicone, BHT, Chlorphenesin, Fragrance, Methylparaben, Phenoxyethanol"
+  },
+  {
+    "openbf_code": "SEED035",
+    "name": "CeraVe Hydrating Mineral Sunscreen SPF 30",
+    "brand": "CeraVe",
+    "categories": ["sunscreens", "mineral", "sensitive skin"],
+    "ingredients_text": "Titanium Dioxide, Zinc Oxide, Aqua, C12-15 Alkyl Benzoate, Glycerin, Dimethicone, Niacinamide, Ceramide NP, Ceramide AP, Ceramide EOP, Sodium Hyaluronate, Cholesterol, Phenoxyethanol, Potassium Phosphate, Cetearyl Alcohol"
+  },
+  {
+    "openbf_code": "SEED036",
+    "name": "Australian Gold Botanical SPF 50 Tinted",
+    "brand": "Australian Gold",
+    "categories": ["sunscreens", "mineral", "tinted"],
+    "ingredients_text": "Titanium Dioxide, Zinc Oxide, Aqua, Coconut Alkanes, Coco-Caprylate, Kakadu Plum Extract, Eucalyptus Leaf Extract, Red Algae Extract, Glycerin, Dimethicone, Phenoxyethanol, Ethylhexylglycerin, Iron Oxides"
+  },
+  {
+    "openbf_code": "SEED037",
+    "name": "Sun Bum Original SPF 50 Sunscreen Lotion",
+    "brand": "Sun Bum",
+    "categories": ["sunscreens", "body care", "water resistant"],
+    "ingredients_text": "Avobenzone, Homosalate, Octisalate, Octocrylene, Aqua, Glycerin, Aloe Barbadensis Leaf Juice, Coconut Oil, Cocoa Butter, Tocopheryl Acetate, Retinyl Palmitate, Fragrance, Benzyl Alcohol, Phenoxyethanol"
+  },
+  {
+    "openbf_code": "SEED038",
+    "name": "Biore UV Aqua Rich Watery Essence SPF 50+",
+    "brand": "Biore",
+    "categories": ["sunscreens", "face care", "lightweight"],
+    "ingredients_text": "Aqua, Ethylhexyl Methoxycinnamate, Lauryl Methacrylate/Sodium Methacrylate Crosspolymer, Alcohol Denat, Diethylamino Hydroxybenzoyl Hexyl Benzoate, Bis-Ethylhexyloxyphenol Methoxyphenyl Triazine, Glycerin, Dimethicone, Sodium Hyaluronate, Citrus Limon Peel Extract, Phenoxyethanol, BHT"
+  },
+  {
+    "openbf_code": "SEED039",
+    "name": "Isntree Hyaluronic Acid Watery Sun Gel SPF 50+",
+    "brand": "Isntree",
+    "categories": ["sunscreens", "K-beauty", "hydrating"],
+    "ingredients_text": "Aqua, Dibutyl Adipate, Diethylamino Hydroxybenzoyl Hexyl Benzoate, Polymethylsilsesquioxane, Bis-Ethylhexyloxyphenol Methoxyphenyl Triazine, Glycerin, Niacinamide, Sodium Hyaluronate, Centella Asiatica Extract, Panthenol, Allantoin, Phenoxyethanol, Ethylhexylglycerin"
+  },
+  {
+    "openbf_code": "SEED040",
+    "name": "Banana Boat Sport Ultra SPF 50",
+    "brand": "Banana Boat",
+    "categories": ["sunscreens", "sport", "body care"],
+    "ingredients_text": "Avobenzone, Homosalate, Octisalate, Octocrylene, Oxybenzone, Aqua, Sorbitol, Styrene/Acrylates Copolymer, Silica, VP/Hexadecene Copolymer, Beeswax, Sodium Lauryl Sulfate, Fragrance, Methylparaben, BHT, DMDM Hydantoin"
+  },
+  {
+    "openbf_code": "SEED041",
+    "name": "The Ordinary Glycolic Acid 7% Toning Solution",
+    "brand": "The Ordinary",
+    "categories": ["toners", "exfoliators", "brightening"],
+    "ingredients_text": "Aqua, Glycolic Acid, Rosa Damascena Flower Water, Centaurea Cyanus Flower Water, Aloe Barbadensis Leaf Water, Propanediol, Glycerin, Triethanolamine, Aminomethyl Propanol, Panthenol, Sodium Hyaluronate Crosspolymer, Tasmannia Lanceolata Fruit Extract, Phenoxyethanol, Chlorphenesin"
+  },
+  {
+    "openbf_code": "SEED042",
+    "name": "Thayers Witch Hazel Facial Toner",
+    "brand": "Thayers",
+    "categories": ["toners", "face care", "alcohol-free"],
+    "ingredients_text": "Aqua, Aloe Barbadensis Leaf Juice, Glycerin, Hamamelis Virginiana Water, Fragrance, Citric Acid, Citrus Grandis Seed Extract"
+  },
+  {
+    "openbf_code": "SEED043",
+    "name": "Pixi Glow Tonic",
+    "brand": "Pixi",
+    "categories": ["toners", "exfoliators", "brightening"],
+    "ingredients_text": "Aqua, Glycolic Acid, Aloe Barbadensis Leaf Juice, Hamamelis Virginiana Water, Aesculus Hippocastanum Extract, Flos Sambuci Extract, Glycerin, Butylene Glycol, Hexylene Glycol, Phenoxyethanol, Sodium Hydroxide"
+  },
+  {
+    "openbf_code": "SEED044",
+    "name": "Klairs Supple Preparation Facial Toner",
+    "brand": "Dear, Klairs",
+    "categories": ["toners", "hydrating", "sensitive skin"],
+    "ingredients_text": "Aqua, Butylene Glycol, Dimethyl Sulfone, Betaine, Caprylic/Capric Triglyceride, Natto Gum, Sodium Hyaluronate, Disodium EDTA, Centella Asiatica Extract, Glycyrrhiza Glabra Root Extract, Tocopheryl Acetate, Carbomer, Panthenol, Arginine, Luffa Cylindrica Fruit Extract, Lysine HCl, Proline, Sodium Ascorbyl Phosphate, Acetyl Methionine, Theanine, Phenoxyethanol, Chlorphenesin"
+  },
+  {
+    "openbf_code": "SEED045",
+    "name": "Laneige Cream Skin Toner & Moisturizer",
+    "brand": "Laneige",
+    "categories": ["toners", "moisturizers", "K-beauty"],
+    "ingredients_text": "Aqua, Glycerin, Caprylic/Capric Triglyceride, Propanediol, Cetearyl Olivate, Sorbitan Olivate, Ceramide NP, Cholesterol, 1,2-Hexanediol, Panthenol, Camellia Sinensis Leaf Extract, Sodium Hyaluronate, Allantoin, Ethylhexylglycerin, Carbomer, Arginine"
+  },
+  {
+    "openbf_code": "SEED046",
+    "name": "Peter Thomas Roth Retinol Fusion PM Night Serum",
+    "brand": "Peter Thomas Roth",
+    "categories": ["serums", "retinol", "night care"],
+    "ingredients_text": "Aqua, Glycerin, Squalane, Retinol, Retinyl Palmitate, Palmitoyl Tripeptide-38, Niacinamide, Sodium Hyaluronate, Tocopheryl Acetate, Phospholipids, Dimethicone, Phenoxyethanol, Ethylhexylglycerin, Fragrance, Linalool, Limonene"
+  },
+  {
+    "openbf_code": "SEED047",
+    "name": "The Inkey List Retinol Serum",
+    "brand": "The Inkey List",
+    "categories": ["serums", "retinol", "anti-aging"],
+    "ingredients_text": "Squalane, Caprylic/Capric Triglyceride, Retinol, Dimethicone, Granactive Retinoid, Glycolic Acid, Rosmarinus Officinalis Leaf Extract, Tocopherol"
+  },
+  {
+    "openbf_code": "SEED048",
+    "name": "Laneige Water Sleeping Mask",
+    "brand": "Laneige",
+    "categories": ["face masks", "hydrating", "night care"],
+    "ingredients_text": "Aqua, Butylene Glycol, Glycerin, Cyclopentasiloxane, Trehalose, Sodium Hyaluronate, Prunus Armeniaca Kernel Extract, Rosa Damascena Flower Extract, Citrus Aurantium Dulcis Peel Extract, Niacinamide, Dimethicone, PEG-60 Hydrogenated Castor Oil, Phenoxyethanol, Fragrance, Limonene, Linalool, Citronellol, Geraniol"
+  },
+  {
+    "openbf_code": "SEED049",
+    "name": "Aztec Secret Indian Healing Clay",
+    "brand": "Aztec Secret",
+    "categories": ["face masks", "clay mask", "deep cleansing"],
+    "ingredients_text": "Bentonite (Calcium Bentonite)"
+  },
+  {
+    "openbf_code": "SEED050",
+    "name": "Glow Recipe Watermelon Glow Sleeping Mask",
+    "brand": "Glow Recipe",
+    "categories": ["face masks", "hydrating", "night care"],
+    "ingredients_text": "Aqua, Glycerin, Citrullus Lanatus Fruit Extract, Sodium Hyaluronate, Niacinamide, Peony Root Extract, Glycolic Acid, Aloe Barbadensis Leaf Extract, Betaine, Panthenol, Trehalose, Allantoin, Phenoxyethanol, Ethylhexylglycerin, Fragrance"
+  },
+  {
+    "openbf_code": "SEED051",
+    "name": "Origins GinZing Refreshing Eye Cream",
+    "brand": "Origins",
+    "categories": ["eye creams", "brightening", "anti-fatigue"],
+    "ingredients_text": "Aqua, Dimethicone, Butylene Glycol, Isododecane, Glycerin, Panax Ginseng Root Extract, Caffeine, Magnolia Officinalis Bark Extract, Niacinamide, Sodium Hyaluronate, Dimethicone Crosspolymer, Tocopheryl Acetate, Phenoxyethanol, Fragrance"
+  },
+  {
+    "openbf_code": "SEED052",
+    "name": "Kiehl's Creamy Eye Treatment with Avocado",
+    "brand": "Kiehl's",
+    "categories": ["eye creams", "hydrating", "face care"],
+    "ingredients_text": "Aqua, Persea Gratissima Oil, Butyrospermum Parkii Butter, Cyclohexasiloxane, PEG-100 Stearate, Glyceryl Stearate, Cetyl Alcohol, Prunus Armeniaca Kernel Oil, Tocopheryl Acetate, Retinyl Palmitate, Sodium Hyaluronate, Beta-Carotene, Phenoxyethanol, Sodium Dehydroacetate"
+  },
+  {
+    "openbf_code": "SEED053",
+    "name": "RoC Retinol Correxion Eye Cream",
+    "brand": "RoC",
+    "categories": ["eye creams", "retinol", "anti-aging"],
+    "ingredients_text": "Aqua, Caprylic/Capric Triglyceride, Glycerin, Octyldodecanol, Dimethicone, Retinol, Retinyl Palmitate, Glycolic Acid, Squalane, Sodium Hyaluronate, Tocopheryl Acetate, BHT, Phenoxyethanol, Methylparaben, Propylparaben"
+  },
+  {
+    "openbf_code": "SEED054",
+    "name": "Saturday Skin Wide Awake Brightening Eye Cream",
+    "brand": "Saturday Skin",
+    "categories": ["eye creams", "brightening", "K-beauty"],
+    "ingredients_text": "Aqua, Glycerin, Niacinamide, Butylene Glycol, Pentylene Glycol, Avena Sativa Kernel Extract, Caffeine, Sodium Hyaluronate, Peptide Complex, Dimethicone, Phenoxyethanol, Ethylhexylglycerin"
+  },
+  {
+    "openbf_code": "SEED055",
+    "name": "Aveeno Positively Radiant Daily Moisturizer SPF 15",
+    "brand": "Aveeno",
+    "categories": ["moisturizers", "sunscreens", "brightening"],
+    "ingredients_text": "Octinoxate, Aqua, Glycerin, Ethylhexyl Salicylate, Isohexadecane, Soy Extract, Dimethicone, Cetyl Alcohol, Niacinamide, Sodium Hyaluronate, BHT, Methylparaben, Ethylparaben, Fragrance, DMDM Hydantoin, Titanium Dioxide"
+  },
+  {
+    "openbf_code": "SEED056",
+    "name": "Dermalogica Active Moist",
+    "brand": "Dermalogica",
+    "categories": ["moisturizers", "oily skin", "oil-free"],
+    "ingredients_text": "Aqua, Cyclopentasiloxane, Isodecyl Neopentanoate, Glycerin, Dimethicone, Sodium Hyaluronate, Silk Amino Acids, Arnica Montana Flower Extract, Lemon Peel Extract, Ivy Extract, Cucumber Fruit Extract, Sambucus Nigra Extract, Panthenol, Phenoxyethanol, Ethylhexylglycerin"
+  },
+  {
+    "openbf_code": "SEED057",
+    "name": "Herbivore Lapis Blue Tansy Oil",
+    "brand": "Herbivore",
+    "categories": ["serums", "face oils", "blemish control"],
+    "ingredients_text": "Squalane, Tanacetum Annuum Flower Oil, Jasminum Grandiflorum Oil, Jojoba Esters, Tocopherol, Bisabolol"
+  },
+  {
+    "openbf_code": "SEED058",
+    "name": "Mario Badescu Drying Lotion",
+    "brand": "Mario Badescu",
+    "categories": ["acne care", "spot treatment", "face care"],
+    "ingredients_text": "Isopropyl Alcohol, Aqua, Calamine, Camphor, Sulfur, Salicylic Acid, Zinc Oxide, Talc"
+  },
+  {
+    "openbf_code": "SEED059",
+    "name": "CosRx BHA Blackhead Power Liquid",
+    "brand": "CosRx",
+    "categories": ["exfoliators", "blemish control", "K-beauty"],
+    "ingredients_text": "Salix Alba (Willow Bark Water), Butylene Glycol, Betaine Salicylate, Niacinamide, 1,2-Hexanediol, Arginine, Panthenol, Sodium Hyaluronate, Xanthan Gum, Ethyl Hexanediol"
+  },
+  {
+    "openbf_code": "SEED060",
+    "name": "Dermalogica Daily Microfoliant",
+    "brand": "Dermalogica",
+    "categories": ["exfoliators", "face care", "brightening"],
+    "ingredients_text": "Rice Starch, Alumina, Allantoin, Aspergillus Ferment, Salicylic Acid, Phytic Acid, Glycyrrhiza Glabra Root Extract, Avena Sativa Kernel Protein, Camellia Sinensis Leaf Extract, Ginkgo Biloba Leaf Extract, Colloidal Oatmeal"
+  },
+  {
+    "openbf_code": "SEED061",
+    "name": "Eucerin Original Healing Rich Cream",
+    "brand": "Eucerin",
+    "categories": ["moisturizers", "body care", "dry skin"],
+    "ingredients_text": "Aqua, Petrolatum, Mineral Oil, Ceresin, Lanolin, Glycerin, Panthenol, Methylchloroisothiazolinone, Methylisothiazolinone, BHT"
+  },
+  {
+    "openbf_code": "SEED062",
+    "name": "Pond's Cold Cream Cleanser",
+    "brand": "Pond's",
+    "categories": ["cleansers", "makeup remover", "classic"],
+    "ingredients_text": "Aqua, Mineral Oil, Beeswax, Ceresin, Sodium Borate, Fragrance, Methylparaben, Propylparaben, DMDM Hydantoin, Carbomer, Cetyl Alcohol"
+  },
+  {
+    "openbf_code": "SEED063",
+    "name": "Palmer's Cocoa Butter Formula",
+    "brand": "Palmer's",
+    "categories": ["body care", "moisturizers", "dry skin"],
+    "ingredients_text": "Aqua, Theobroma Cacao Seed Butter, Mineral Oil, Glycerin, Cetearyl Alcohol, Stearic Acid, Dimethicone, Isopropyl Myristate, Tocopheryl Acetate, Fragrance, Methylparaben, Propylparaben"
+  },
+  {
+    "openbf_code": "SEED064",
+    "name": "Drunk Elephant Protini Polypeptide Cream",
+    "brand": "Drunk Elephant",
+    "categories": ["moisturizers", "anti-aging", "peptides"],
+    "ingredients_text": "Aqua, Dicaprylyl Carbonate, Glycerin, Cetearyl Alcohol, Marula Oil, Acetyl Hexapeptide-8, Copper Tripeptide-1, Palmitoyl Tripeptide-38, Palmitoyl Tetrapeptide-7, Palmitoyl Tripeptide-1, Sodium Hyaluronate, Sclerocarya Birrea Seed Oil, Ceramide NP, Pygmy Waterlily Stem Cell Extract, Phenoxyethanol, Ethylhexylglycerin"
+  },
+  {
+    "openbf_code": "SEED065",
+    "name": "IT Cosmetics Confidence in a Cream Moisturizer",
+    "brand": "IT Cosmetics",
+    "categories": ["moisturizers", "anti-aging", "face care"],
+    "ingredients_text": "Aqua, Glycerin, Dimethicone, Pentaerythrityl Tetraethylhexanoate, Butyrospermum Parkii Butter, Ceramide NP, Niacinamide, Collagen, Sodium Hyaluronate, Peptide Complex, Tocopheryl Acetate, Adenosine, Phenoxyethanol, Ethylhexylglycerin, Fragrance, Linalool"
+  },
+  {
+    "openbf_code": "SEED066",
+    "name": "Clean & Clear Morning Burst Cleanser",
+    "brand": "Clean & Clear",
+    "categories": ["cleansers", "acne care", "oily skin"],
+    "ingredients_text": "Aqua, Sodium Laureth Sulfate, Cocamidopropyl Betaine, Glycerin, Sodium Chloride, Sodium Lauryl Sulfate, Fragrance, Menthol, Ginseng Root Extract, Vitamin C, PEG-80 Sorbitan Laurate, Methylparaben, DMDM Hydantoin, Tetrasodium EDTA, Yellow 5, Blue 1"
+  },
+  {
+    "openbf_code": "SEED067",
+    "name": "Glossier Milky Jelly Cleanser",
+    "brand": "Glossier",
+    "categories": ["cleansers", "gentle", "face care"],
+    "ingredients_text": "Aqua, Poloxamer 184, Rosa Damascena Flower Water, Glycerin, Sodium Cocoyl Isethionate, Allantoin, Comfrey Root Extract, Pro-Vitamin B5, Phenoxyethanol, Ethylhexylglycerin"
+  },
+  {
+    "openbf_code": "SEED068",
+    "name": "Murad Rapid Age Spot Treatment",
+    "brand": "Murad",
+    "categories": ["serums", "brightening", "dark spots"],
+    "ingredients_text": "Aqua, Glycolic Acid, Butylene Glycol, Glycerin, Hydroquinone, Ascorbic Acid, Dimethicone, Hexylresorcinol, Retinol, Phenoxyethanol, Fragrance, Linalool"
+  },
+  {
+    "openbf_code": "SEED069",
+    "name": "Belif The True Cream Moisturizing Bomb",
+    "brand": "Belif",
+    "categories": ["moisturizers", "hydrating", "K-beauty"],
+    "ingredients_text": "Aqua, Glycerin, Squalane, Cetearyl Alcohol, Euphrasia Officinalis Extract, Calendula Officinalis Flower Extract, Oat Kernel Extract, Plantago Lanceolata Leaf Extract, Sodium Hyaluronate, Dimethicone, Phenoxyethanol, Ethylhexylglycerin"
+  },
+  {
+    "openbf_code": "SEED070",
+    "name": "Innisfree Green Tea Seed Serum",
+    "brand": "Innisfree",
+    "categories": ["serums", "hydrating", "K-beauty"],
+    "ingredients_text": "Aqua, Camellia Sinensis Seed Oil, Glycerin, Camellia Sinensis Leaf Extract, Betaine, Glycereth-26, 1,2-Hexanediol, Sodium Hyaluronate, Panthenol, Polyglutamic Acid, Tocopherol, Ceramide NP, Phenoxyethanol, Fragrance"
+  },
+  {
+    "openbf_code": "SEED071",
+    "name": "Vaseline Intensive Care Cocoa Radiant Lotion",
+    "brand": "Vaseline",
+    "categories": ["body care", "moisturizers", "dry skin"],
+    "ingredients_text": "Aqua, Glycerin, Stearic Acid, Glycol Stearate, Isopropyl Myristate, Theobroma Cacao Seed Butter, Dimethicone, Petrolatum, Glyceryl Stearate, Sodium Hydroxide, Cocoa Extract, Fragrance, Methylparaben, Propylparaben, DMDM Hydantoin"
+  },
+  {
+    "openbf_code": "SEED072",
+    "name": "Cosrx Advanced Snail 96 Mucin Power Essence",
+    "brand": "CosRx",
+    "categories": ["serums", "hydrating", "K-beauty"],
+    "ingredients_text": "Snail Secretion Filtrate, Betaine, Butylene Glycol, 1,2-Hexanediol, Sodium Hyaluronate, Panthenol, Arginine, Allantoin, Ethyl Hexanediol, Sodium Polyacrylate, Carbomer, Phenoxyethanol"
+  },
+  {
+    "openbf_code": "SEED073",
+    "name": "TruSkin Vitamin C Serum",
+    "brand": "TruSkin",
+    "categories": ["serums", "vitamin C", "brightening"],
+    "ingredients_text": "Aqua, Ascorbic Acid, Aloe Barbadensis Leaf Juice, Sodium Hyaluronate, Tocopheryl Acetate, Niacinamide, Retinol, Witch Hazel, Jojoba Oil, Phenoxyethanol, Ethylhexylglycerin, Fragrance"
+  },
+  {
+    "openbf_code": "SEED074",
+    "name": "Jergens Natural Glow Daily Moisturizer",
+    "brand": "Jergens",
+    "categories": ["body care", "moisturizers", "self-tanner"],
+    "ingredients_text": "Aqua, Glycerin, Cetearyl Alcohol, Petrolatum, Mineral Oil, Dimethicone, Isopropyl Palmitate, Stearic Acid, Dihydroxyacetone, Fragrance, Methylparaben, Propylparaben, DMDM Hydantoin, Coconut Oil"
+  },
+  {
+    "openbf_code": "SEED075",
+    "name": "Sunday Riley Good Genes Lactic Acid Treatment",
+    "brand": "Sunday Riley",
+    "categories": ["serums", "exfoliators", "brightening"],
+    "ingredients_text": "Aqua, Lactic Acid, Propanediol, Glycerin, Arnica Montana Flower Extract, Aloe Barbadensis Leaf Juice, Licorice Root Extract, Lemongrass Extract, Prickly Pear Extract, Sodium Hyaluronate, Niacinamide, Phospholipids, Phenoxyethanol, Ethylhexylglycerin, Fragrance"
+  }
+]

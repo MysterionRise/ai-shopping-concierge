@@ -106,8 +106,16 @@ class DemoChatModel(BaseChatModel):
         return "Hello! I'm your AI beauty concierge. How can I help you today?"
 
     def _conversational_reply(self, user: str, system: str) -> str:
+        # Memory acknowledgments — prepend if present in context
+        memory_prefix = ""
+        if "memory acknowledgments" in system:
+            memory_prefix = (
+                "I've updated my notes about your preferences. "
+                "I'll keep that in mind for future recommendations.\n\n"
+            )
+
         if any(w in user for w in ["hi", "hello", "hey"]):
-            return (
+            return memory_prefix + (
                 "Hello! Welcome to Beauty Concierge! I'm here to help you find the "
                 "perfect skincare and beauty products for your needs. Whether you're "
                 "looking for a new moisturizer, need help with a routine, or want to "
@@ -118,22 +126,62 @@ class DemoChatModel(BaseChatModel):
                 "You're welcome! I'm glad I could help. Feel free to come back anytime "
                 "you need beauty advice or product recommendations. Take care of your skin!"
             )
-        if "safe products found" in system:
+
+        # Memory query — user asks what the assistant knows about them
+        if "wants to know what you remember" in system:
+            if "stored memories" in system:
+                return (
+                    "Here's what I remember about you:\n\n"
+                    "I have your skin profile, preferences, and any allergies you've shared "
+                    "on file. This helps me give you personalized recommendations and "
+                    "avoid suggesting products with ingredients you're sensitive to.\n\n"
+                    "You can manage or delete any of these memories from your Profile page. "
+                    "Is there anything you'd like to update?"
+                )
             return (
+                "I don't have any stored memories about you yet! As we chat, I'll learn "
+                "your skin type, concerns, and preferences to give better recommendations.\n\n"
+                "Want to get started? Tell me about your skin type and any allergies or "
+                "sensitivities you have."
+            )
+
+        # Ingredient check — user asks about specific ingredients
+        if any(
+            w in user
+            for w in ["ingredient", "safe", "contain", "paraben", "retinol", "niacinamide"]
+        ):
+            if "safety violations" in system:
+                return memory_prefix + (
+                    "I checked the ingredients and found some concerns based on your profile. "
+                    "Some of these ingredients may not be compatible with your sensitivities.\n\n"
+                    "I've flagged the specific ingredients of concern. Would you like me to "
+                    "suggest alternative products with safer ingredient profiles?"
+                )
+            return memory_prefix + (
+                "Great question about ingredients! Here's what I can tell you:\n\n"
+                "When evaluating ingredients, I check for potential allergens, irritants, "
+                "and how they interact with your skin type. I also look for known "
+                "ingredient interactions that could cause sensitivity.\n\n"
+                "Would you like me to check a specific product's ingredient list, "
+                "or do you want to know more about a particular ingredient?"
+            )
+
+        if "safe products found" in system:
+            return memory_prefix + (
                 "Great news! I found some products that match your needs and are safe "
                 "for your skin profile. Here are my top recommendations:\n\n"
                 "Each product has been checked against your allergy profile and skin type. "
                 "Would you like more details about any of these, or shall I refine the search?"
             )
         if "safety violations" in system:
-            return (
+            return memory_prefix + (
                 "I found some products but had to filter out a few that contain "
                 "ingredients you're sensitive to. Your safety is my top priority!\n\n"
                 "I've flagged the problematic products and can show you safe alternatives instead. "
                 "Would you like me to search for similar products without those ingredients?"
             )
         if any(w in user for w in ["routine", "regimen"]):
-            return (
+            return memory_prefix + (
                 "Here's a recommended skincare routine for you:\n\n"
                 "**Morning:**\n1. Gentle cleanser\n2. Toner\n3. Serum (vitamin C)\n"
                 "4. Moisturizer\n5. Sunscreen (SPF 30+)\n\n"
@@ -141,7 +189,7 @@ class DemoChatModel(BaseChatModel):
                 "3. Treatment serum\n4. Night cream\n\n"
                 "Want me to recommend specific products for any of these steps?"
             )
-        return (
+        return memory_prefix + (
             "I'd be happy to help with that! As your beauty concierge, I can:\n\n"
             "- **Find products** tailored to your skin type and concerns\n"
             "- **Check ingredients** for safety and compatibility\n"

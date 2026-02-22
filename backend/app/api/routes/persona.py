@@ -1,7 +1,7 @@
 import json
 
 import structlog
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 
 from app.dependencies import get_redis
@@ -12,32 +12,39 @@ logger = structlog.get_logger()
 router = APIRouter(prefix="/persona", tags=["persona"])
 
 
-async def get_persona_monitor(redis=Depends(get_redis)) -> PersonaMonitor:
-    return PersonaMonitor(redis)
+def _get_monitor(request: Request) -> PersonaMonitor:
+    """Return the shared PersonaMonitor from app lifespan state."""
+    monitor: PersonaMonitor | None = getattr(request.app.state, "persona_monitor", None)
+    if monitor is None:
+        raise RuntimeError("PersonaMonitor not initialized")
+    return monitor
 
 
 @router.get("/scores")
 async def get_scores(
     conversation_id: str,
     message_id: str,
-    monitor: PersonaMonitor = Depends(get_persona_monitor),
+    request: Request,
 ):
+    monitor = _get_monitor(request)
     return await monitor.get_scores(conversation_id, message_id)
 
 
 @router.get("/history")
 async def get_history(
     conversation_id: str,
-    monitor: PersonaMonitor = Depends(get_persona_monitor),
+    request: Request,
 ):
+    monitor = _get_monitor(request)
     return await monitor.get_history(conversation_id)
 
 
 @router.get("/alerts")
 async def get_alerts(
     conversation_id: str,
-    monitor: PersonaMonitor = Depends(get_persona_monitor),
+    request: Request,
 ):
+    monitor = _get_monitor(request)
     return await monitor.get_alerts(conversation_id)
 
 

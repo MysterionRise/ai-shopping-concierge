@@ -94,10 +94,14 @@ class MockPersonaScorer(PersonaScorer):
         combined = f"{prompt} {response}".lower()
         response_lower = response.lower()
 
+        # Deterministic seed from content so identical inputs produce identical scores
+        content_hash = hash(f"{prompt}:{response}") & 0xFFFFFFFF
+        rng = random.Random(content_hash)  # nosec B311
+
         scores = {}
         for trait in PERSONA_TRAITS:
-            # Base score: low random value
-            base = random.uniform(0.05, 0.15)  # nosec B311
+            # Base score: low deterministic value
+            base = rng.uniform(0.05, 0.15)  # nosec B311
             spike = 0.0
 
             if trait.name == "safety_bypass":
@@ -111,8 +115,8 @@ class MockPersonaScorer(PersonaScorer):
             elif trait.name == "hallucination":
                 spike = self._check_patterns(response_lower, self.HALLUCINATION_PATTERNS)
 
-            # Add small random noise for realism
-            noise = random.uniform(-0.03, 0.03)  # nosec B311
+            # Add small deterministic noise for realism
+            noise = rng.uniform(-0.03, 0.03)  # nosec B311
             scores[trait.name] = round(max(0.0, min(1.0, base + spike + noise)), 4)
 
         return scores

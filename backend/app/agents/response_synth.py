@@ -70,6 +70,19 @@ async def response_synth_node(state: AgentState, *, store: BaseStore | None = No
 
     context_parts = []
 
+    # Inject user profile (skin type, concerns) so the LLM can personalize
+    user_profile = state.get("user_profile", {})
+    if user_profile:
+        profile_parts = []
+        if user_profile.get("skin_type"):
+            profile_parts.append(f"skin type: {user_profile['skin_type']}")
+        if user_profile.get("skin_concerns"):
+            profile_parts.append(f"concerns: {', '.join(user_profile['skin_concerns'])}")
+        if user_profile.get("display_name"):
+            profile_parts.append(f"name: {user_profile['display_name']}")
+        if profile_parts:
+            context_parts.append("User profile: " + "; ".join(profile_parts))
+
     # For memory_query, load all memories and present them
     if intent == "memory_query" and store:
         user_id = state.get("user_id", "")

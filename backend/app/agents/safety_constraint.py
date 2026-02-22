@@ -73,7 +73,7 @@ async def safety_constraint_node(state: AgentState) -> dict:
         try:
             llm = get_llm(temperature=0)
             products_text = "\n".join(
-                f"- {p.get('name', 'Unknown')}: {', '.join(p.get('ingredients', [])[:15])}"
+                f"- {p.get('name', 'Unknown')}: {', '.join(p.get('ingredients', [])[:30])}"
                 for p in safe_products
             )
             response = await llm.ainvoke(

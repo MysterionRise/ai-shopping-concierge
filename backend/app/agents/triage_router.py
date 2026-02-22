@@ -5,7 +5,6 @@ import structlog
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.store.base import BaseStore
-from pydantic import BaseModel, Field
 
 from app.agents.state import AgentState
 from app.core.llm import get_llm
@@ -30,13 +29,6 @@ Intents:
 - general_chat: Greetings, thanks, off-topic, or general conversation
 
 Respond with ONLY the intent name, nothing else."""
-
-
-class TriageResult(BaseModel):
-    intent: str = Field(
-        description="The classified intent",
-        pattern="^(product_search|ingredient_check|routine_advice|general_chat)$",
-    )
 
 
 VALID_INTENTS = {

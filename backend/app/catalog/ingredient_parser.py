@@ -74,7 +74,16 @@ KNOWN_ALLERGEN_SYNONYMS: dict[str, list[str]] = {
     "mineral oil": ["mineral oil", "paraffinum liquidum", "petrolatum", "petroleum"],
     "retinol": ["retinol", "retinyl palmitate", "retinaldehyde", "tretinoin", "adapalene"],
     "aha": ["glycolic acid", "lactic acid", "mandelic acid", "citric acid", "malic acid"],
-    "bha": ["salicylic acid"],
+    "bha": ["salicylic acid", "beta hydroxy acid", "willow bark extract"],
+    "coconut": [
+        "cocamidopropyl betaine",
+        "sodium coco-sulfate",
+        "caprylic/capric triglyceride",
+        "coconut oil",
+        "cocos nucifera oil",
+    ],
+    "propylene_glycol": ["propylene glycol", "propanediol", "1,2-propanediol"],
+    "phenoxyethanol": ["phenoxyethanol", "2-phenoxyethanol"],
 }
 
 

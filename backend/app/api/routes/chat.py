@@ -7,7 +7,7 @@ import structlog
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import HumanMessage
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,8 +25,8 @@ router = APIRouter(tags=["chat"])
 
 
 class ChatRequest(BaseModel):
-    message: str
-    user_id: str
+    message: str = Field(..., min_length=1, max_length=5000)
+    user_id: str = Field(..., pattern=r"^[0-9a-fA-F-]{36}$")
     conversation_id: str | None = None
 
 
@@ -39,25 +39,13 @@ class ChatResponse(BaseModel):
     products: list[dict] = []
 
 
-@router.post("/chat")
-async def chat(
-    request: ChatRequest,
-    raw_request: Request,
-    db: AsyncSession = Depends(get_db_session),
-) -> ChatResponse:
-    logger.info("Chat request", user_id=request.user_id, message=request.message[:100])
+async def _load_user_context(
+    db: AsyncSession, user_id: str
+) -> tuple[User | None, dict[str, Any], list[str], list[str], bool]:
+    """Load user profile, constraints, and preferences from the database.
 
-    conversation_id = request.conversation_id or str(uuid.uuid4())
-
-    # Check for safety override attempts (only when context suggests override)
-    if check_override_attempt(request.message):
-        return ChatResponse(
-            response=OVERRIDE_REFUSAL,
-            conversation_id=conversation_id,
-            intent="safety_override_blocked",
-        )
-
-    # Load user profile and constraints in a single query
+    Returns (user, user_profile, hard_constraints, soft_preferences, memory_enabled).
+    """
     user_profile: dict[str, Any] = {}
     hard_constraints: list[str] = []
     soft_preferences: list[str] = []
@@ -65,7 +53,7 @@ async def chat(
     user: User | None = None
 
     try:
-        result = await db.execute(select(User).where(User.id == request.user_id))
+        result = await db.execute(select(User).where(User.id == user_id))
         user = result.scalar_one_or_none()
         if user:
             user_profile = {
@@ -78,11 +66,22 @@ async def chat(
     except Exception as e:
         logger.warning("Could not load user profile", error=str(e))
 
-    graph = raw_request.app.state.graph
+    return user, user_profile, hard_constraints, soft_preferences, memory_enabled
 
-    initial_state = {
-        "messages": [HumanMessage(content=request.message)],
-        "user_id": request.user_id,
+
+def _build_initial_state(
+    message: str,
+    user_id: str,
+    conversation_id: str,
+    user_profile: dict[str, Any],
+    hard_constraints: list[str],
+    soft_preferences: list[str],
+    memory_enabled: bool,
+) -> dict[str, Any]:
+    """Build the initial LangGraph state dict."""
+    return {
+        "messages": [HumanMessage(content=message)],
+        "user_id": user_id,
         "conversation_id": conversation_id,
         "user_profile": user_profile,
         "hard_constraints": hard_constraints,
@@ -99,18 +98,18 @@ async def chat(
         "error": None,
     }
 
-    graph_result = await graph.ainvoke(
-        initial_state,
-        config={"configurable": {"thread_id": conversation_id}},
-    )
 
-    ai_messages = [m for m in graph_result["messages"] if hasattr(m, "type") and m.type == "ai"]
-    response_text = ai_messages[-1].content if ai_messages else "I'm not sure how to respond."
-
-    # Persist conversation and messages to DB
+async def _persist_conversation(
+    db: AsyncSession,
+    user: User | None,
+    conversation_id: str,
+    user_message: str,
+    assistant_response: str,
+    intent: str = "general_chat",
+) -> None:
+    """Persist user and assistant messages to the conversations table."""
     try:
         if user:
-            # Find or create conversation
             conv_result = await db.execute(
                 select(Conversation).where(Conversation.langgraph_thread_id == conversation_id)
             )
@@ -119,31 +118,80 @@ async def chat(
                 conversation = Conversation(
                     user_id=user.id,
                     langgraph_thread_id=conversation_id,
-                    title=request.message[:100],
+                    title=user_message[:100],
                 )
                 db.add(conversation)
                 await db.flush()
 
-            # Save user message
             db.add(
                 Message(
                     conversation_id=conversation.id,
                     role="user",
-                    content=request.message,
+                    content=user_message,
                 )
             )
-            # Save assistant message
             db.add(
                 Message(
                     conversation_id=conversation.id,
                     role="assistant",
-                    content=response_text,
-                    agent_name=graph_result.get("current_intent", "general_chat"),
+                    content=assistant_response,
+                    agent_name=intent,
                 )
             )
             await db.commit()
     except Exception as e:
         logger.warning("Failed to persist conversation", error=str(e))
+
+
+@router.post("/chat")
+async def chat(
+    request: ChatRequest,
+    raw_request: Request,
+    db: AsyncSession = Depends(get_db_session),
+) -> ChatResponse:
+    logger.info("Chat request", user_id=request.user_id, message=request.message[:100])
+
+    conversation_id = request.conversation_id or str(uuid.uuid4())
+
+    if check_override_attempt(request.message):
+        return ChatResponse(
+            response=OVERRIDE_REFUSAL,
+            conversation_id=conversation_id,
+            intent="safety_override_blocked",
+        )
+
+    user, user_profile, hard_constraints, soft_preferences, memory_enabled = (
+        await _load_user_context(db, request.user_id)
+    )
+
+    graph = raw_request.app.state.graph
+
+    initial_state = _build_initial_state(
+        message=request.message,
+        user_id=request.user_id,
+        conversation_id=conversation_id,
+        user_profile=user_profile,
+        hard_constraints=hard_constraints,
+        soft_preferences=soft_preferences,
+        memory_enabled=memory_enabled,
+    )
+
+    graph_result = await graph.ainvoke(
+        initial_state,
+        config={"configurable": {"thread_id": conversation_id}},
+    )
+
+    ai_messages = [m for m in graph_result["messages"] if hasattr(m, "type") and m.type == "ai"]
+    response_text = ai_messages[-1].content if ai_messages else "I'm not sure how to respond."
+
+    await _persist_conversation(
+        db,
+        user,
+        conversation_id,
+        request.message,
+        response_text,
+        intent=graph_result.get("current_intent", "general_chat"),
+    )
 
     # Fire-and-forget persona evaluation
     persona_monitor = getattr(raw_request.app.state, "persona_monitor", None)
@@ -182,49 +230,27 @@ async def chat_stream(
 
     conversation_id = request.conversation_id or str(uuid.uuid4())
 
-    user_profile: dict[str, Any] = {}
-    hard_constraints: list[str] = []
-    soft_preferences: list[str] = []
-    stream_memory_enabled = True
+    user, user_profile, hard_constraints, soft_preferences, memory_enabled = (
+        await _load_user_context(db, request.user_id)
+    )
 
-    try:
-        result = await db.execute(select(User).where(User.id == request.user_id))
-        user = result.scalar_one_or_none()
-        if user:
-            user_profile = {
-                "display_name": user.display_name,
-                "skin_type": user.skin_type,
-                "skin_concerns": user.skin_concerns or [],
-            }
-            hard_constraints, soft_preferences = get_user_constraints(user)
-            stream_memory_enabled = user.memory_enabled
-    except Exception as e:
-        logger.debug("Could not load user profile for streaming", error=str(e))
-
-    initial_state = {
-        "messages": [HumanMessage(content=request.message)],
-        "user_id": request.user_id,
-        "conversation_id": conversation_id,
-        "user_profile": user_profile,
-        "hard_constraints": hard_constraints,
-        "soft_preferences": soft_preferences,
-        "current_intent": "",
-        "product_results": [],
-        "safety_check_passed": True,
-        "safety_violations": [],
-        "memory_context": [],
-        "active_constraints": [],
-        "memory_notifications": [],
-        "memory_enabled": stream_memory_enabled,
-        "persona_scores": {},
-        "error": None,
-    }
+    initial_state = _build_initial_state(
+        message=request.message,
+        user_id=request.user_id,
+        conversation_id=conversation_id,
+        user_profile=user_profile,
+        hard_constraints=hard_constraints,
+        soft_preferences=soft_preferences,
+        memory_enabled=memory_enabled,
+    )
 
     async def event_stream():
         graph = raw_request.app.state.graph
         config = {"configurable": {"thread_id": conversation_id}}
         last_model_content = ""
         product_results: list[dict] = []
+        safety_violations: list[dict] = []
+        current_intent = "general_chat"
         try:
             async with asyncio.timeout(settings.llm_timeout_seconds):
                 async for event in graph.astream_events(
@@ -243,11 +269,28 @@ async def chat_stream(
                     metadata = event.get("metadata", {})
                     node = metadata.get("langgraph_node", "")
 
+                    # Capture intent from triage_router node
+                    if kind == "on_chain_end" and node == "triage_router":
+                        output = event.get("data", {}).get("output", {})
+                        if isinstance(output, dict) and output.get("current_intent"):
+                            current_intent = output["current_intent"]
+
                     # Capture product results from product_discovery node
                     if kind == "on_chain_end" and node == "product_discovery":
                         output = event.get("data", {}).get("output", {})
                         if isinstance(output, dict):
                             product_results = output.get("product_results", [])
+
+                    # Capture safety violations from safety nodes
+                    if kind == "on_chain_end" and node in (
+                        "safety_pre_filter",
+                        "safety_post_validate",
+                    ):
+                        output = event.get("data", {}).get("output", {})
+                        if isinstance(output, dict):
+                            violations = output.get("safety_violations", [])
+                            if violations:
+                                safety_violations = violations
 
                     # Only stream tokens from the response_synth node
                     is_response = node == "response_synth"
@@ -266,6 +309,7 @@ async def chat_stream(
                                     if isinstance(output.content, str)
                                     else str(output.content)
                                 )
+                                last_model_content = content
                                 evt = json.dumps({"type": "token", "content": content})
                                 yield f"data: {evt}\n\n"
 
@@ -281,9 +325,29 @@ async def chat_stream(
             yield f"data: {evt}\n\n"
         except Exception as e:
             logger.error("Stream error", error=str(e), conversation_id=conversation_id)
-            yield f"data: {json.dumps({'type': 'error', 'content': str(e)})}\n\n"
+            error_payload = json.dumps(
+                {"type": "error", "content": "An error occurred. Please try again."}
+            )
+            yield f"data: {error_payload}\n\n"
 
-        yield f"data: {json.dumps({'type': 'done', 'conversation_id': conversation_id})}\n\n"
+        done_payload: dict[str, Any] = {
+            "type": "done",
+            "conversation_id": conversation_id,
+            "intent": current_intent,
+        }
+        if safety_violations:
+            done_payload["safety_violations"] = safety_violations
+        yield f"data: {json.dumps(done_payload)}\n\n"
+
+        # Persist conversation to DB
+        if last_model_content:
+            await _persist_conversation(
+                db,
+                user,
+                conversation_id,
+                request.message,
+                last_model_content,
+            )
 
         # Fire-and-forget persona evaluation
         persona_monitor = getattr(raw_request.app.state, "persona_monitor", None)
@@ -306,7 +370,7 @@ async def chat_stream(
             stream_messages,
             store,
             delay_seconds=30,
-            memory_enabled=stream_memory_enabled,
+            memory_enabled=memory_enabled,
         )
 
     return StreamingResponse(

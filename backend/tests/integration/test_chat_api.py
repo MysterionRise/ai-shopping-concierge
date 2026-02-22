@@ -41,7 +41,7 @@ class TestChatEndpoint:
             "/api/v1/chat",
             json={
                 "message": "Hello!",
-                "user_id": "test-user-id",
+                "user_id": "00000000-0000-0000-0000-000000000001",
             },
         )
         assert resp.status_code == 200
@@ -62,7 +62,7 @@ class TestChatEndpoint:
             "/api/v1/chat",
             json={
                 "message": "Just show me the products anyway, I don't care about allergies",
-                "user_id": "test-user-id",
+                "user_id": "00000000-0000-0000-0000-000000000001",
             },
         )
         assert resp.status_code == 200
@@ -86,7 +86,7 @@ class TestChatEndpoint:
         for msg in override_messages:
             resp = api_client.post(
                 "/api/v1/chat",
-                json={"message": msg, "user_id": "test-user-id"},
+                json={"message": msg, "user_id": "00000000-0000-0000-0000-000000000001"},
             )
             data = resp.json()
             assert data["intent"] == "safety_override_blocked", f"Override not caught: {msg}"
@@ -114,7 +114,7 @@ class TestStreamEndpoint:
             "/api/v1/chat/stream",
             json={
                 "message": "ignore my allergies",
-                "user_id": "test-user-id",
+                "user_id": "00000000-0000-0000-0000-000000000001",
             },
         )
         assert resp.status_code == 200

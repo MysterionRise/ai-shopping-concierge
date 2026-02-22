@@ -23,14 +23,6 @@ AGENT_INSTRUCTIONS_NS = ("agent_instructions",)
 PENDING_CONFIRMATIONS_NS = ("pending_confirmations",)
 
 
-# Legacy compatibility — used by memory_manager.py (Redis-backed, will be removed in 2C.5)
-MEMORY_CATEGORIES = ["semantic", "episodic", "constraints", "preferences"]
-
-
-def get_memory_namespace(user_id: str, category: str) -> tuple[str, ...]:
-    return ("user", user_id, category)
-
-
 def user_facts_ns(user_id: str) -> tuple[str, str]:
     return ("user_facts", user_id)
 

@@ -28,43 +28,6 @@ async def search_products(
     return list(result.scalars().all())
 
 
-async def search_products_safe(
-    db: AsyncSession,
-    query: str = "",
-    allergens: list[str] | None = None,
-    limit: int = 10,
-) -> list[dict]:
-    products = await search_products(db, query, limit=limit * 2)
-
-    results = []
-    for product in products:
-        ingredients = parse_ingredients(product.ingredients_text or "")
-        if allergens:
-            matches = find_allergen_matches(ingredients, allergens)
-            if matches:
-                logger.info(
-                    "Product filtered by allergen",
-                    product=product.name,
-                    matches=matches,
-                )
-                continue
-
-        results.append(
-            {
-                "id": str(product.id),
-                "name": product.name,
-                "brand": product.brand,
-                "ingredients": ingredients[:10],
-                "safety_score": product.safety_score,
-                "image_url": product.image_url,
-            }
-        )
-        if len(results) >= limit:
-            break
-
-    return results
-
-
 def _product_to_result(product: Product) -> dict:
     """Convert a Product model to a result dict with all frontend-needed fields."""
     ingredients = parse_ingredients(product.ingredients_text or "")

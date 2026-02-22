@@ -1,6 +1,9 @@
 import { create } from 'zustand'
 import { ChatMessage, ProductCard } from '../types'
-import { sendMessage, createSSEConnection, parseBackendProduct } from '../api/chat'
+import { sendMessage, createSSEConnection, parseBackendProduct, StreamDoneData } from '../api/chat'
+
+// Track the active SSE controller outside Zustand state (not serializable)
+let activeStreamController: AbortController | null = null
 
 interface ChatState {
   messages: ChatMessage[]
@@ -14,7 +17,7 @@ interface ChatState {
   addMessage: (message: ChatMessage) => void
   sendChatMessage: (text: string) => Promise<void>
   sendStreamingMessage: (text: string) => void
-  loadConversation: (conversationId: string) => void
+  loadConversation: (conversationId: string, messages?: ChatMessage[]) => void
   clearMessages: () => void
 }
 
@@ -50,11 +53,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const response = await sendMessage(text, userId, currentConversationId)
 
       const products = (response.products || []).map(parseBackendProduct)
+      const violations = response.safety_violations || []
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
         content: response.response,
+        intent: response.intent,
         products: products.length > 0 ? products : undefined,
+        safetyViolations: violations.length > 0 ? violations : undefined,
         timestamp: new Date().toISOString(),
       }
 
@@ -80,6 +86,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
   sendStreamingMessage: (text) => {
     const { userId, currentConversationId } = get()
 
+    // Abort any in-flight streaming request
+    if (activeStreamController) {
+      activeStreamController.abort()
+      activeStreamController = null
+    }
+
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
@@ -94,7 +106,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       streamingProducts: [],
     }))
 
-    createSSEConnection(
+    activeStreamController = createSSEConnection(
       text,
       userId,
       currentConversationId,
@@ -103,14 +115,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
           streamingContent: state.streamingContent + token,
         }))
       },
-      (conversationId) => {
+      (doneData: StreamDoneData) => {
+        activeStreamController = null
         const content = get().streamingContent
         const products = get().streamingProducts
+        const violations = doneData.safetyViolations || []
         const assistantMessage: ChatMessage = {
           id: crypto.randomUUID(),
           role: 'assistant',
           content,
+          intent: doneData.intent,
           products: products.length > 0 ? products : undefined,
+          safetyViolations: violations.length > 0 ? violations : undefined,
           timestamp: new Date().toISOString(),
         }
         set((state) => ({
@@ -118,10 +134,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
           isTyping: false,
           streamingContent: '',
           streamingProducts: [],
-          currentConversationId: conversationId || state.currentConversationId,
+          currentConversationId: doneData.conversationId || state.currentConversationId,
         }))
       },
       (error) => {
+        activeStreamController = null
         const errorMessage: ChatMessage = {
           id: crypto.randomUUID(),
           role: 'assistant',
@@ -141,8 +158,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
     )
   },
 
-  loadConversation: (conversationId) => {
-    set({ currentConversationId: conversationId, messages: [] })
+  loadConversation: (conversationId, messages) => {
+    set({
+      currentConversationId: conversationId,
+      messages: messages || [],
+      streamingContent: '',
+      streamingProducts: [],
+    })
   },
 
   clearMessages: () =>

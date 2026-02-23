@@ -29,7 +29,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
   streamingProducts: [],
   userId: 'default-user',
 
-  setUserId: (id) => set({ userId: id }),
+  setUserId: (id) => {
+    // Abort any in-flight streaming request when switching users
+    if (activeStreamController) {
+      activeStreamController.abort()
+      activeStreamController = null
+    }
+    set({ userId: id, isTyping: false, streamingContent: '', streamingProducts: [] })
+  },
 
   addMessage: (message) =>
     set((state) => ({ messages: [...state.messages, message] })),
@@ -52,6 +59,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       const response = await sendMessage(text, userId, currentConversationId)
 
+      // Discard response if user switched during the request
+      if (get().userId !== userId) return
+
       const products = (response.products || []).map(parseBackendProduct)
       const violations = response.safety_violations || []
       const assistantMessage: ChatMessage = {
@@ -70,6 +80,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
         currentConversationId: response.conversation_id,
       }))
     } catch (err) {
+      // Discard error if user switched during the request
+      if (get().userId !== userId) return
+
       const errorMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'assistant',
@@ -111,12 +124,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
       userId,
       currentConversationId,
       (token) => {
+        // Discard tokens if user switched during streaming
+        if (get().userId !== userId) return
         set((state) => ({
           streamingContent: state.streamingContent + token,
         }))
       },
       (doneData: StreamDoneData) => {
         activeStreamController = null
+        // Discard response if user switched during streaming
+        if (get().userId !== userId) {
+          set({ isTyping: false, streamingContent: '', streamingProducts: [] })
+          return
+        }
         const content = get().streamingContent
         const products = get().streamingProducts
         const violations = doneData.safetyViolations || []
@@ -139,6 +159,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
       },
       (error) => {
         activeStreamController = null
+        // Discard error if user switched during streaming
+        if (get().userId !== userId) {
+          set({ isTyping: false, streamingContent: '', streamingProducts: [] })
+          return
+        }
         const errorMessage: ChatMessage = {
           id: crypto.randomUUID(),
           role: 'assistant',
@@ -153,6 +178,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         }))
       },
       (products) => {
+        // Discard products if user switched during streaming
+        if (get().userId !== userId) return
         set({ streamingProducts: products })
       },
     )

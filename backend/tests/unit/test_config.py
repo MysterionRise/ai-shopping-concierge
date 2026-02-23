@@ -9,7 +9,7 @@ def test_default_settings():
     )
     assert s.openrouter_base_url == "https://openrouter.ai/api/v1"
     assert s.app_port == 8080
-    assert s.persona_enabled is True
+    assert s.persona_enabled is False
     assert s.persona_scorer == "mock"
     assert "http://localhost:3000" in s.cors_origins
 

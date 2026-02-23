@@ -103,21 +103,43 @@ async def _persist_conversation(
     db: AsyncSession,
     user: User | None,
     conversation_id: str,
+    thread_id: str,
     user_message: str,
     assistant_response: str,
     intent: str = "general_chat",
-) -> None:
-    """Persist user and assistant messages to the conversations table."""
+) -> str | None:
+    """Persist user and assistant messages to the conversations table.
+
+    Args:
+        conversation_id: The DB primary key UUID of the conversation.
+        thread_id: The LangGraph thread_id used for checkpointing.
+
+    Returns:
+        The conversation DB id (str) if persisted, else None.
+    """
+    if not assistant_response or not assistant_response.strip():
+        logger.warning("Skipping persistence of empty assistant response")
+        return None
+
     try:
         if user:
+            # Look up by conversation DB id first
             conv_result = await db.execute(
-                select(Conversation).where(Conversation.langgraph_thread_id == conversation_id)
+                select(Conversation).where(Conversation.id == conversation_id)
             )
             conversation = conv_result.scalar_one_or_none()
+
+            if not conversation:
+                # Fall back: check by langgraph_thread_id for backward compat
+                conv_result = await db.execute(
+                    select(Conversation).where(Conversation.langgraph_thread_id == thread_id)
+                )
+                conversation = conv_result.scalar_one_or_none()
+
             if not conversation:
                 conversation = Conversation(
                     user_id=user.id,
-                    langgraph_thread_id=conversation_id,
+                    langgraph_thread_id=thread_id,
                     title=user_message[:100],
                 )
                 db.add(conversation)
@@ -139,8 +161,10 @@ async def _persist_conversation(
                 )
             )
             await db.commit()
+            return str(conversation.id)
     except Exception as e:
         logger.warning("Failed to persist conversation", error=str(e))
+    return None
 
 
 @router.post("/chat")
@@ -152,6 +176,7 @@ async def chat(
     logger.info("Chat request", user_id=request.user_id, message=request.message[:100])
 
     conversation_id = request.conversation_id or str(uuid.uuid4())
+    thread_id = str(uuid.uuid4())
 
     if check_override_attempt(request.message):
         return ChatResponse(
@@ -178,33 +203,39 @@ async def chat(
 
     graph_result = await graph.ainvoke(
         initial_state,
-        config={"configurable": {"thread_id": conversation_id}},
+        config={"configurable": {"thread_id": thread_id}},
     )
 
     ai_messages = [m for m in graph_result["messages"] if hasattr(m, "type") and m.type == "ai"]
     response_text = ai_messages[-1].content if ai_messages else "I'm not sure how to respond."
 
-    await _persist_conversation(
+    persisted_id = await _persist_conversation(
         db,
         user,
         conversation_id,
+        thread_id,
         request.message,
         response_text,
         intent=graph_result.get("current_intent", "general_chat"),
     )
+    # Use the DB conversation id if available, otherwise fall back to request id
+    resolved_conversation_id = persisted_id or conversation_id
 
     # Fire-and-forget persona evaluation
     persona_monitor = getattr(raw_request.app.state, "persona_monitor", None)
     if persona_monitor:
         message_id = str(uuid.uuid4())
-        await persona_monitor.evaluate_async(
-            request.message, response_text, conversation_id, message_id
-        )
+        try:
+            await persona_monitor.evaluate_async(
+                request.message, response_text, resolved_conversation_id, message_id
+            )
+        except Exception as e:
+            logger.warning("Persona evaluation failed", error=str(e))
 
     product_results = graph_result.get("product_results", [])
     return ChatResponse(
         response=response_text,
-        conversation_id=conversation_id,
+        conversation_id=resolved_conversation_id,
         intent=graph_result.get("current_intent", "general_chat"),
         safety_violations=graph_result.get("safety_violations", []),
         product_count=len(product_results),
@@ -229,6 +260,7 @@ async def chat_stream(
         return StreamingResponse(override_stream(), media_type="text/event-stream")
 
     conversation_id = request.conversation_id or str(uuid.uuid4())
+    thread_id = str(uuid.uuid4())
 
     user, user_profile, hard_constraints, soft_preferences, memory_enabled = (
         await _load_user_context(db, request.user_id)
@@ -246,8 +278,9 @@ async def chat_stream(
 
     async def event_stream():
         graph = raw_request.app.state.graph
-        config = {"configurable": {"thread_id": conversation_id}}
+        config = {"configurable": {"thread_id": thread_id}}
         last_model_content = ""
+        stream_errored = False
         product_results: list[dict] = []
         safety_violations: list[dict] = []
         current_intent = "general_chat"
@@ -319,11 +352,13 @@ async def chat_stream(
                 yield f"data: {evt}\n\n"
 
         except TimeoutError:
+            stream_errored = True
             logger.warning("LLM timeout during stream", conversation_id=conversation_id)
             msg = "Response timed out. Please try again."
             evt = json.dumps({"type": "error", "content": msg})
             yield f"data: {evt}\n\n"
         except Exception as e:
+            stream_errored = True
             logger.error("Stream error", error=str(e), conversation_id=conversation_id)
             error_payload = json.dumps(
                 {"type": "error", "content": "An error occurred. Please try again."}
@@ -339,30 +374,43 @@ async def chat_stream(
             done_payload["safety_violations"] = safety_violations
         yield f"data: {json.dumps(done_payload)}\n\n"
 
-        # Persist conversation to DB
-        if last_model_content:
-            await _persist_conversation(
+        # Only persist complete, non-errored responses
+        if last_model_content and last_model_content.strip() and not stream_errored:
+            persisted_id = await _persist_conversation(
                 db,
                 user,
                 conversation_id,
+                thread_id,
                 request.message,
                 last_model_content,
             )
+            if persisted_id:
+                conversation_id_for_eval = persisted_id
+            else:
+                conversation_id_for_eval = conversation_id
+        else:
+            conversation_id_for_eval = conversation_id
 
         # Fire-and-forget persona evaluation
         persona_monitor = getattr(raw_request.app.state, "persona_monitor", None)
-        if persona_monitor and last_model_content:
+        if persona_monitor and last_model_content and not stream_errored:
             message_id = str(uuid.uuid4())
-            await persona_monitor.evaluate_async(
-                request.message, last_model_content, conversation_id, message_id
-            )
+            try:
+                await persona_monitor.evaluate_async(
+                    request.message,
+                    last_model_content,
+                    conversation_id_for_eval,
+                    message_id,
+                )
+            except Exception as e:
+                logger.warning("Persona evaluation failed", error=str(e))
 
         # Schedule background memory extraction
         store = getattr(raw_request.app.state, "store", None)
         stream_messages = [
             {"role": "user", "content": request.message},
         ]
-        if last_model_content:
+        if last_model_content and not stream_errored:
             stream_messages.append({"role": "assistant", "content": last_model_content})
         schedule_extraction(
             conversation_id,

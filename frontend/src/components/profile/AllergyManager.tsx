@@ -16,6 +16,8 @@ export default function AllergyManager() {
   if (user?.id !== prevUserIdRef.current) {
     prevUserIdRef.current = user?.id
     setAllergies(user?.allergies || [])
+    setNewAllergy('')
+    setSaveSuccess(false)
   }
 
   const isDirty =

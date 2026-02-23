@@ -1,7 +1,7 @@
 import json
 
 import structlog
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
 from app.dependencies import get_redis
@@ -16,7 +16,7 @@ def _get_monitor(request: Request) -> PersonaMonitor:
     """Return the shared PersonaMonitor from app lifespan state."""
     monitor: PersonaMonitor | None = getattr(request.app.state, "persona_monitor", None)
     if monitor is None:
-        raise RuntimeError("PersonaMonitor not initialized")
+        raise HTTPException(status_code=503, detail="Persona monitoring unavailable")
     return monitor
 
 

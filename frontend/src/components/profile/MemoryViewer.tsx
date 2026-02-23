@@ -19,11 +19,14 @@ export default function MemoryViewer() {
   const {
     data: memories = [],
     isLoading,
+    isFetching,
     isError,
   } = useQuery({
     queryKey: ['memories', user?.id],
     queryFn: () => getUserMemories(user!.id),
     enabled: !!user?.id,
+    staleTime: 0,
+    placeholderData: undefined,
   })
 
   const deleteMutation = useMutation({
@@ -43,15 +46,15 @@ export default function MemoryViewer() {
         What the concierge remembers about you across sessions.
       </p>
 
-      {isLoading && <SkeletonRows count={3} />}
+      {(isLoading || isFetching) && <SkeletonRows count={3} />}
 
-      {isError && (
+      {isError && !isFetching && (
         <p className="text-sm text-red-500 text-center py-4">
           Failed to load memories. Please try again later.
         </p>
       )}
 
-      {!isLoading && !isError && (
+      {!isLoading && !isFetching && !isError && (
         <div className="space-y-2">
           {memories.map((memory) => (
             <div

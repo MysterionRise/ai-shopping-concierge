@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     langsmith_project: str = "beauty-concierge"
 
     # Persona monitoring
-    persona_enabled: bool = True
+    persona_enabled: bool = False
     persona_scorer: str = "mock"  # "mock" (no ML deps) or "real" (requires torch)
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}

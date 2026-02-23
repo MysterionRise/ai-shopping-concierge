@@ -13,6 +13,7 @@ def test_graph_compiles():
 def test_build_graph_has_nodes():
     graph = build_graph()
     assert "triage_router" in graph.nodes
+    assert "safety_pre_filter" in graph.nodes
     assert "response_synth" in graph.nodes
     assert "product_discovery" in graph.nodes
     assert "safety_post_validate" in graph.nodes
@@ -20,17 +21,17 @@ def test_build_graph_has_nodes():
 
 def test_route_after_triage_product_search():
     state = {"current_intent": "product_search"}
-    assert route_after_triage(state) == "product_discovery"
+    assert route_after_triage(state) == "safety_pre_filter"
 
 
 def test_route_after_triage_ingredient_check():
     state = {"current_intent": "ingredient_check"}
-    assert route_after_triage(state) == "product_discovery"
+    assert route_after_triage(state) == "safety_pre_filter"
 
 
 def test_route_after_triage_routine_advice():
     state = {"current_intent": "routine_advice"}
-    assert route_after_triage(state) == "product_discovery"
+    assert route_after_triage(state) == "safety_pre_filter"
 
 
 def test_route_after_triage_general_chat():

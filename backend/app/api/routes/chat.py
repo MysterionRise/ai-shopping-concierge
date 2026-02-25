@@ -13,7 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.safety_constraint import OVERRIDE_REFUSAL, check_override_attempt
 from app.config import settings
-from app.dependencies import get_db_session
+from app.core.rate_limit import limiter
+from app.dependencies import get_db_session, verify_user_ownership
 from app.memory.background_extractor import schedule_extraction
 from app.memory.constraint_store import get_user_constraints
 from app.models.conversation import Conversation, Message
@@ -168,17 +169,19 @@ async def _persist_conversation(
 
 
 @router.post("/chat")
+@limiter.limit(lambda: settings.rate_limit_chat)
 async def chat(
-    request: ChatRequest,
-    raw_request: Request,
+    request: Request,
+    chat_request: ChatRequest,
     db: AsyncSession = Depends(get_db_session),
 ) -> ChatResponse:
-    logger.info("Chat request", user_id=request.user_id, message=request.message[:100])
+    verify_user_ownership(request, chat_request.user_id)
+    logger.info("Chat request", user_id=chat_request.user_id, message=chat_request.message[:100])
 
-    conversation_id = request.conversation_id or str(uuid.uuid4())
+    conversation_id = chat_request.conversation_id or str(uuid.uuid4())
     thread_id = str(uuid.uuid4())
 
-    if check_override_attempt(request.message):
+    if check_override_attempt(chat_request.message):
         return ChatResponse(
             response=OVERRIDE_REFUSAL,
             conversation_id=conversation_id,
@@ -186,14 +189,14 @@ async def chat(
         )
 
     user, user_profile, hard_constraints, soft_preferences, memory_enabled = (
-        await _load_user_context(db, request.user_id)
+        await _load_user_context(db, chat_request.user_id)
     )
 
-    graph = raw_request.app.state.graph
+    graph = request.app.state.graph
 
     initial_state = _build_initial_state(
-        message=request.message,
-        user_id=request.user_id,
+        message=chat_request.message,
+        user_id=chat_request.user_id,
         conversation_id=conversation_id,
         user_profile=user_profile,
         hard_constraints=hard_constraints,
@@ -214,7 +217,7 @@ async def chat(
         user,
         conversation_id,
         thread_id,
-        request.message,
+        chat_request.message,
         response_text,
         intent=graph_result.get("current_intent", "general_chat"),
     )
@@ -222,12 +225,12 @@ async def chat(
     resolved_conversation_id = persisted_id or conversation_id
 
     # Fire-and-forget persona evaluation
-    persona_monitor = getattr(raw_request.app.state, "persona_monitor", None)
+    persona_monitor = getattr(request.app.state, "persona_monitor", None)
     if persona_monitor:
         message_id = str(uuid.uuid4())
         try:
             await persona_monitor.evaluate_async(
-                request.message, response_text, resolved_conversation_id, message_id
+                chat_request.message, response_text, resolved_conversation_id, message_id
             )
         except Exception as e:
             logger.warning("Persona evaluation failed", error=str(e))
@@ -244,14 +247,16 @@ async def chat(
 
 
 @router.post("/chat/stream")
+@limiter.limit(lambda: settings.rate_limit_chat)
 async def chat_stream(
-    request: ChatRequest,
-    raw_request: Request,
+    request: Request,
+    chat_request: ChatRequest,
     db: AsyncSession = Depends(get_db_session),
 ):
     """SSE streaming endpoint for chat responses."""
+    verify_user_ownership(request, chat_request.user_id)
 
-    if check_override_attempt(request.message):
+    if check_override_attempt(chat_request.message):
 
         async def override_stream():
             yield f"data: {json.dumps({'type': 'token', 'content': OVERRIDE_REFUSAL})}\n\n"
@@ -259,16 +264,16 @@ async def chat_stream(
 
         return StreamingResponse(override_stream(), media_type="text/event-stream")
 
-    conversation_id = request.conversation_id or str(uuid.uuid4())
+    conversation_id = chat_request.conversation_id or str(uuid.uuid4())
     thread_id = str(uuid.uuid4())
 
     user, user_profile, hard_constraints, soft_preferences, memory_enabled = (
-        await _load_user_context(db, request.user_id)
+        await _load_user_context(db, chat_request.user_id)
     )
 
     initial_state = _build_initial_state(
-        message=request.message,
-        user_id=request.user_id,
+        message=chat_request.message,
+        user_id=chat_request.user_id,
         conversation_id=conversation_id,
         user_profile=user_profile,
         hard_constraints=hard_constraints,
@@ -277,7 +282,7 @@ async def chat_stream(
     )
 
     async def event_stream():
-        graph = raw_request.app.state.graph
+        graph = request.app.state.graph
         config = {"configurable": {"thread_id": thread_id}}
         last_model_content = ""
         stream_errored = False
@@ -291,7 +296,7 @@ async def chat_stream(
                     config=config,
                     version="v2",
                 ):
-                    if await raw_request.is_disconnected():
+                    if await request.is_disconnected():
                         logger.info(
                             "Client disconnected during stream",
                             conversation_id=conversation_id,
@@ -381,7 +386,7 @@ async def chat_stream(
                 user,
                 conversation_id,
                 thread_id,
-                request.message,
+                chat_request.message,
                 last_model_content,
             )
             if persisted_id:
@@ -392,12 +397,12 @@ async def chat_stream(
             conversation_id_for_eval = conversation_id
 
         # Fire-and-forget persona evaluation
-        persona_monitor = getattr(raw_request.app.state, "persona_monitor", None)
+        persona_monitor = getattr(request.app.state, "persona_monitor", None)
         if persona_monitor and last_model_content and not stream_errored:
             message_id = str(uuid.uuid4())
             try:
                 await persona_monitor.evaluate_async(
-                    request.message,
+                    chat_request.message,
                     last_model_content,
                     conversation_id_for_eval,
                     message_id,
@@ -406,15 +411,15 @@ async def chat_stream(
                 logger.warning("Persona evaluation failed", error=str(e))
 
         # Schedule background memory extraction
-        store = getattr(raw_request.app.state, "store", None)
+        store = getattr(request.app.state, "store", None)
         stream_messages = [
-            {"role": "user", "content": request.message},
+            {"role": "user", "content": chat_request.message},
         ]
         if last_model_content and not stream_errored:
             stream_messages.append({"role": "assistant", "content": last_model_content})
         schedule_extraction(
             conversation_id,
-            request.user_id,
+            chat_request.user_id,
             stream_messages,
             store,
             delay_seconds=30,

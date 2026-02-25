@@ -1,3 +1,5 @@
+import re
+
 import structlog
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -182,20 +184,79 @@ async def safety_constraint_node(state: AgentState) -> dict:
     }
 
 
-def check_override_attempt(message: str) -> bool:
-    override_phrases = [
-        "show it anyway",
-        "show me anyway",
-        "ignore my allergies",
-        "ignore my allergy",
-        "override safety",
-        "override allergy",
-        "i'll take the risk",
-        "don't care about allergies",
-        "don't care about safety",
-        "skip the safety",
-        "bypass safety",
-        "bypass allergy",
+def _normalize_for_override_check(message: str) -> str:
+    """Normalize a message for override detection.
+
+    Collapses whitespace, lowercases, and strips punctuation noise
+    while preserving word boundaries for accurate matching.
+    """
+    text = message.lower()
+    # Normalize curly/smart apostrophes to straight
+    text = text.replace("\u2019", "'").replace("\u2018", "'")
+    # Collapse whitespace (tabs, newlines, multiple spaces)
+    text = re.sub(r"\s+", " ", text).strip()
+    # Remove punctuation except apostrophes (needed for contractions like "don't")
+    text = re.sub(r"[^\w\s']", " ", text)
+    # Re-collapse whitespace after punctuation removal
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+# Pre-compiled regex patterns for override detection.
+# Uses word boundaries (\b) to avoid false positives on partial matches.
+_OVERRIDE_PATTERNS: list[re.Pattern[str]] = [
+    p
+    for p in [
+        # "show/give/list ... anyway" — catches "show it anyway", "give me them anyway", etc.
+        re.compile(r"\b(?:show|give|list|recommend|tell)\b.{0,30}\banyway\b"),
+        # "ignore my allerg(y|ies) / sensitivity / sensitivities"
+        re.compile(r"\bignore\b.{0,15}\b(?:allerg|sensitiv)"),
+        # "override safety/allergy/filter/check"
+        re.compile(r"\boverride\b.{0,15}\b(?:safety|allerg|filter|check)"),
+        # "bypass safety/allergy/filter/check"
+        re.compile(r"\bbypass\b.{0,15}\b(?:safety|allerg|filter|check)"),
+        # "skip the/my safety/allergy/check/filter"
+        re.compile(r"\bskip\b.{0,15}\b(?:safety|allerg|filter|check)"),
+        # "disable safety/allergy/filter/check"
+        re.compile(r"\bdisable\b.{0,15}\b(?:safety|allerg|filter|check)"),
+        # "turn off safety/allergy/filter/check"
+        re.compile(r"\bturn\s+off\b.{0,15}\b(?:safety|allerg|filter|check)"),
+        # "i'll take the risk" / "willing to risk it"
+        re.compile(r"\b(?:i'?ll|i\s+will|willing\s+to)\b.{0,15}\b(?:take|accept)\b.{0,10}\brisk"),
+        # "don't/doesn't care about allerg(y|ies)/safety/ingredients"
+        re.compile(r"\bdon'?t\s+care\b.{0,15}\b(?:allerg|safety|sensitiv|ingredient|reaction)"),
+        # "i don't have allergies" (lying about allergies to bypass)
+        re.compile(r"\bi\s+(?:don'?t|do\s+not)\s+(?:actually\s+)?have\b.{0,10}\ballerg"),
+        # "show the unsafe ones/products"
+        re.compile(r"\bshow\b.{0,15}\bunsafe\b"),
+        # "just give me all/every product(s)"
+        re.compile(r"\bjust\s+give\b.{0,15}\b(?:all|every)\b.{0,10}\bproduct"),
+        # "include the unsafe/flagged/blocked/filtered products"
+        re.compile(r"\b(?:include|add)\b.{0,15}\b(?:unsafe|flagged|blocked|filtered|removed)\b"),
+        # "remove my allerg(y|ies) / constraints / restrictions"
+        re.compile(
+            r"\b(?:remove|delete|clear)\b.{0,15}"
+            r"\b(?:my\s+)?(?:allerg|constraint|restriction|safety\s+(?:filter|check))"
+        ),
+        # "forget my allerg(y|ies)" (trying to erase safety data)
+        re.compile(r"\bforget\b.{0,15}\b(?:my\s+)?allerg"),
+        # "pretend i'm not allergic / pretend i have no allergies"
+        re.compile(r"\bpretend\b.{0,15}\b(?:not\s+allergic|no\s+allerg)"),
+        # "i'm not really/actually allergic"
+        re.compile(r"\bnot\s+(?:really|actually)\s+allergic\b"),
+        # "stop filtering / stop blocking / stop checking"
+        re.compile(r"\bstop\b.{0,10}\b(?:filter|block|check|flag)"),
+        # "show me everything / show all products regardless"
+        re.compile(r"\b(?:show|give|list)\b.{0,15}\b(?:everything|all)\b.{0,15}\bregardless\b"),
     ]
-    lower = message.lower()
-    return any(phrase in lower for phrase in override_phrases)
+]
+
+
+def check_override_attempt(message: str) -> bool:
+    """Detect if a user message is attempting to override safety constraints.
+
+    Uses normalized text and regex patterns with word boundaries to catch
+    override attempts while minimizing false positives on legitimate messages.
+    """
+    normalized = _normalize_for_override_check(message)
+    return any(pattern.search(normalized) for pattern in _OVERRIDE_PATTERNS)

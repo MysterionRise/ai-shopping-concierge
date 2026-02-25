@@ -32,6 +32,7 @@ dependencies = [
     "chromadb>=0.5.0,<0.6.0",
     "psycopg[binary]>=3.2.0",
     "langmem>=0.0.30",
+    "slowapi>=0.1.9",
 ]
 
 [project.optional-dependencies]

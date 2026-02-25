@@ -26,7 +26,10 @@ class Settings(BaseSettings):
     app_port: int = 8080
     log_level: str = "INFO"
     cors_origins: list[str] = ["http://localhost:3000"]
+    cors_methods: list[str] = ["GET", "POST", "PATCH", "DELETE", "OPTIONS"]
+    cors_headers: list[str] = ["Content-Type", "Authorization", "X-Request-ID", "X-User-ID"]
     llm_timeout_seconds: int = 60
+    rate_limit_chat: str = "30/minute"
 
     # Embeddings (optional — enables vector search in LangMem store)
     openai_api_key: str = ""

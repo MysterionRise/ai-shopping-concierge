@@ -1,10 +1,10 @@
 import structlog
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_db_session
+from app.dependencies import get_db_session, verify_user_ownership
 from app.models.conversation import Conversation, Message
 
 logger = structlog.get_logger()
@@ -35,8 +35,10 @@ class MessageResponse(BaseModel):
 @router.get("", response_model=list[ConversationResponse])
 async def list_conversations(
     user_id: str,
+    request: Request,
     db: AsyncSession = Depends(get_db_session),
 ):
+    verify_user_ownership(request, user_id)
     stmt = (
         select(Conversation)
         .where(Conversation.user_id == user_id)
@@ -61,8 +63,10 @@ async def list_conversations(
 async def get_messages(
     conversation_id: str,
     user_id: str,
+    request: Request,
     db: AsyncSession = Depends(get_db_session),
 ):
+    verify_user_ownership(request, user_id)
     result = await db.execute(
         select(Conversation).where(
             Conversation.id == conversation_id,

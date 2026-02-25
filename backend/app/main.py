@@ -3,10 +3,12 @@ from contextlib import asynccontextmanager
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi.errors import RateLimitExceeded
 
 from app.agents.graph import compile_graph
 from app.api.routes import chat, conversations, health, memory, persona, products, users
 from app.config import settings
+from app.core.rate_limit import limiter, rate_limit_exceeded_handler
 
 structlog.configure(
     processors=[
@@ -106,12 +108,18 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # Rate limiter
+    app.state.limiter = limiter
+    app.add_exception_handler(
+        RateLimitExceeded, rate_limit_exceeded_handler  # type: ignore[arg-type]
+    )
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=settings.cors_methods,
+        allow_headers=settings.cors_headers,
     )
 
     app.include_router(health.router)

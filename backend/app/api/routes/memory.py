@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_db_session
+from app.dependencies import get_db_session, verify_user_ownership
 from app.memory.constraint_store import add_constraint
 from app.memory.langmem_config import constraints_ns, user_facts_ns
 
@@ -30,6 +30,7 @@ class ConstraintCreate(BaseModel):
 @router.get("", response_model=list[MemoryResponse])
 async def get_user_memories(user_id: str, request: Request):
     """Get all memories for a user from the LangMem store."""
+    verify_user_ownership(request, user_id)
     store = getattr(request.app.state, "store", None)
     if store is None:
         return []
@@ -73,6 +74,7 @@ async def get_user_memories(user_id: str, request: Request):
 @router.delete("/{memory_id}")
 async def delete_memory(user_id: str, memory_id: str, request: Request):
     """Delete a memory from the LangMem store."""
+    verify_user_ownership(request, user_id)
     store = getattr(request.app.state, "store", None)
     if store is None:
         return {"status": "not_found"}
@@ -93,6 +95,7 @@ async def delete_memory(user_id: str, memory_id: str, request: Request):
 @router.get("/constraints", response_model=list[MemoryResponse])
 async def get_constraints(user_id: str, request: Request):
     """Get all constraints from the LangMem store."""
+    verify_user_ownership(request, user_id)
     store = getattr(request.app.state, "store", None)
     if store is None:
         return []
@@ -122,6 +125,7 @@ async def add_user_constraint(
     db: AsyncSession = Depends(get_db_session),
 ):
     """Add a constraint to the LangMem store and Postgres."""
+    verify_user_ownership(request, user_id)
     memory_id = f"constraint_{uuid.uuid4().hex[:8]}"
     store = getattr(request.app.state, "store", None)
 

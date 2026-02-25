@@ -96,17 +96,21 @@ backend/
                          #   product_discovery.py, safety_constraint.py, response_synth.py
         api/routes/      # FastAPI routes: health, chat, users, products,
                          #   conversations, memory, persona
-        catalog/         # Open Beauty Facts client, ingredient parser,
-                         #   safety index, product service
-        core/            # database.py (async SQLAlchemy), redis.py, llm.py, vector_store.py
-        memory/          # memory_manager.py, constraint_store.py, langmem_config.py
+        catalog/         # Open Beauty Facts client, ingredient parser, safety index,
+                         #   product service, auto_seed, ingredient_interactions
+        core/            # database.py (async SQLAlchemy), redis.py, llm.py, rate_limit.py, vector_store.py
+        memory/          # constraint_store.py, langmem_config.py, background_extractor.py,
+                         #   conflict_detector.py
         models/          # SQLAlchemy: user, product, conversation, message, persona
         persona/         # monitor.py, traits.py, vector_extractor.py (optional, needs torch)
         config.py        # Pydantic Settings (loads .env)
         main.py          # FastAPI app factory + lifespan
         dependencies.py  # DI providers (get_db_session, get_redis, get_settings)
     alembic/             # Async Alembic migrations
-    tests/unit/          # 76 tests, 72% coverage
+    tests/
+        unit/            # 38 test files — core logic, models, utilities
+        integration/     # 2 test files — agent pipeline, chat API end-to-end
+        eval/            # 3 test files — memory, persona, safety evaluation benchmarks
     scripts/             # seed_catalog.py, compute_persona_vectors.py
 
 frontend/
@@ -190,6 +194,10 @@ All config via environment variables, loaded by `app/config.py` (Pydantic Settin
 | `LOG_LEVEL` | `INFO` | Logging level |
 | `CORS_ORIGINS` | `["http://localhost:3000"]` | Allowed origins |
 | `LLM_TIMEOUT_SECONDS` | `60` | Timeout for LLM calls in streaming |
+| `RATE_LIMIT_CHAT` | `"20/minute"` | Rate limit for chat endpoints |
+| `CORS_METHODS` | `["GET","POST","PATCH","DELETE"]` | Allowed HTTP methods |
+| `CORS_HEADERS` | `["Content-Type","X-User-ID"]` | Allowed request headers |
+| `DB_STATEMENT_TIMEOUT_MS` | `30000` | PostgreSQL statement timeout |
 
 ---
 
@@ -236,8 +244,10 @@ make migrate         # alembic upgrade head
 
 ### Testing
 - **Framework:** pytest + pytest-asyncio (asyncio_mode=auto)
-- **76 unit tests** across 13 test files
-- **Coverage:** 72% (threshold: 70%)
+- **529 backend tests** across 41 test files (unit, integration, eval)
+- **150 frontend tests** across 22 test files (vitest + @testing-library/react)
+- **679 total tests**, all passing, ~17s execution time
+- **Coverage:** 85% (threshold: 70%)
 - **Coverage omissions:** persona/*, vector_store, openbf_client, product_service, prompt_optimizer
 - **Mocking pattern:** `conftest.py` patches `get_llm` across all 5 agent modules, provides mock_db_session and mock_redis fixtures
 - Tests use `unittest.mock.AsyncMock` for async operations
@@ -245,7 +255,7 @@ make migrate         # alembic upgrade head
 ### Frontend
 - **Build:** `tsc && vite build` (TypeScript strict, zero errors)
 - **Dev server:** Vite on :3000 with proxy to backend
-- **Testing:** vitest + @testing-library/react (setup exists, tests TBD)
+- **Testing:** vitest + @testing-library/react (22 test files covering all major components, stores, and API layer)
 - **State:** Zustand stores (chatStore, userStore)
 - **Data fetching:** React Query hooks (useChat, useProducts, useUser)
 - **Styling:** Tailwind CSS with custom pink primary palette
@@ -262,7 +272,8 @@ make migrate         # alembic upgrade head
 | `backend/app/core/llm.py` | LLM factory + DemoChatModel — all LLM access goes through `get_llm()` |
 | `backend/app/config.py` | Pydantic Settings — all env vars |
 | `backend/app/api/routes/chat.py` | Main chat endpoint — loads user, invokes graph, returns response |
-| `backend/app/catalog/ingredient_parser.py` | INCI parser + allergen synonym dictionary (10 groups) |
+| `backend/app/catalog/ingredient_parser.py` | INCI parser + allergen synonym dictionary (10 groups) + REVERSE_ALLERGEN_INDEX |
+| `backend/app/core/rate_limit.py` | Rate limiting via slowapi (per-user key extraction) |
 | `backend/app/memory/memory_manager.py` | Memory abstraction layer over Redis |
 | `frontend/src/stores/chatStore.ts` | Chat state + message sending logic |
 | `frontend/src/components/chat/ChatView.tsx` | Main chat UI component |
@@ -276,7 +287,7 @@ make migrate         # alembic upgrade head
 - **pyproject.toml:** Requires `[tool.setuptools.packages.find] include = ["app*"]` to avoid flat-layout error with alembic dir
 - **structlog:** Use simple config only (no `wrapper_class`/`context_class` — causes KeyError)
 - **Demo mode:** When `OPENROUTER_API_KEY` is empty, `DemoChatModel` returns deterministic responses — good for demos but doesn't exercise real LLM behavior
-- **Product catalog:** Currently empty until `make seed` is run (requires ChromaDB + Postgres running)
+- **Product catalog:** Auto-seeds from fixture on startup; full catalog via `make seed` (requires ChromaDB + Postgres running)
 - **Persona monitoring:** Optional, disabled by default. Requires `pip install -e ".[persona]"` + ~16GB RAM for Llama 3.1 8B model
 - **Frontend bundle:** 720KB (single chunk warning) — could benefit from code splitting
 
@@ -298,26 +309,28 @@ make migrate         # alembic upgrade head
 - Docker Compose (6 services)
 - Alembic async migrations
 - CI pipeline (GitHub Actions: lint, security, test)
-- 76 unit tests, 72% coverage
+- 679 tests (529 backend + 150 frontend), 85% coverage
 - Demo scripts (scenario + test user generation)
 - LangGraph checkpointing via `AsyncPostgresSaver` (auto-creates tables, MemorySaver fallback)
 - Full Docker Compose E2E (6 services boot cleanly, backend runs alembic on startup, nginx reverse proxy with SSE support)
+- Product discovery with hybrid search (keyword + vector), allergen filtering, and ingredient interaction checking
+- Conversation persistence (auto-saves user and assistant messages to DB after each chat)
+- Persona monitoring frontend (SSE streaming, historical tracking, drift charts, alerts)
+- Memory viewer frontend (real data from backend API, delete support, privacy consent toggle)
+- Rate limiting on chat endpoints (slowapi, configurable per-user limits)
+- User ownership validation on sensitive endpoints (conversations, memory)
+- Override detection with 19 regex patterns and whitespace normalization
+- Integration tests (agent pipeline + chat API)
 
 ### Partially Implemented (Stubs/Placeholders)
-- **Product discovery:** Extracts search intent but returns empty results (ChromaDB query not wired to graph yet)
-- **Catalog seeding:** Script exists but needs `make seed` to populate
-- **Conversation persistence:** Routes exist but graph doesn't save messages to DB
+- **Catalog seeding:** Auto-seeds from fixture on startup; full Open Beauty Facts import via `make seed`
 - **WebSocket chat:** Removed (SSE is sufficient for this project)
-- **Persona monitoring frontend:** Uses mock data (no real scores flowing yet)
-- **Memory viewer frontend:** Uses mock data
 
 ### Not Yet Implemented
-- Vector search integration (ChromaDB → product_discovery node)
-- LangMem SDK integration (currently using direct Redis)
 - Prompt optimization (prompt_optimizer.py is a placeholder)
 - Real persona vector computation (requires torch + model download)
-- Frontend tests (vitest setup exists, no test files)
-- Integration tests
+- API authentication (JWT or session-based — endpoints currently rely on rate limiting + user ownership validation only)
+- Monitoring/observability (Prometheus metrics, Sentry error tracking, request tracing)
 
 ---
 

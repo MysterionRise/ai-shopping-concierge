@@ -28,6 +28,11 @@ logger = structlog.get_logger()
 async def lifespan(app: FastAPI):
     logger.info("Starting Beauty Concierge API")
 
+    # Store the shared Redis connection pool on app state for clean shutdown
+    from app.core.redis import redis_pool
+
+    app.state.redis_pool = redis_pool
+
     # Initialize LangGraph checkpointer
     checkpointer_cm = None
     checkpointer = None
@@ -96,6 +101,10 @@ async def lifespan(app: FastAPI):
         await store_cm.__aexit__(None, None, None)
     if checkpointer_cm is not None:
         await checkpointer_cm.__aexit__(None, None, None)
+
+    # Close the shared Redis connection pool
+    await app.state.redis_pool.disconnect()
+    logger.info("Redis connection pool closed")
 
     logger.info("Shutting down Beauty Concierge API")
 

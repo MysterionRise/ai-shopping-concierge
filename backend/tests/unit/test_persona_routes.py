@@ -24,6 +24,7 @@ def test_scores_returns_503_when_disabled(client_no_persona):
     )
     assert resp.status_code == 503
     assert "unavailable" in resp.json()["detail"].lower()
+    assert resp.headers.get("retry-after") == "30"
 
 
 def test_history_returns_503_when_disabled(client_no_persona):

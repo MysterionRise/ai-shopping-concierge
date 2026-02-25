@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     chromadb_host: str = "localhost"
     chromadb_port: int = 8000
 
+    # Database tuning
+    db_statement_timeout_ms: int = 30000
+
     # App
     app_host: str = "0.0.0.0"  # nosec B104
     app_port: int = 8080

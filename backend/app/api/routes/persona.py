@@ -16,7 +16,11 @@ def _get_monitor(request: Request) -> PersonaMonitor:
     """Return the shared PersonaMonitor from app lifespan state."""
     monitor: PersonaMonitor | None = getattr(request.app.state, "persona_monitor", None)
     if monitor is None:
-        raise HTTPException(status_code=503, detail="Persona monitoring unavailable")
+        raise HTTPException(
+            status_code=503,
+            detail="Persona monitoring unavailable",
+            headers={"Retry-After": "30"},
+        )
     return monitor
 
 

@@ -86,13 +86,18 @@ KNOWN_ALLERGEN_SYNONYMS: dict[str, list[str]] = {
     "phenoxyethanol": ["phenoxyethanol", "2-phenoxyethanol"],
 }
 
+# Reverse index: maps each member ingredient to its group name for O(1) lookups.
+# Also maps group names to themselves.
+REVERSE_ALLERGEN_INDEX: dict[str, str] = {}
+for _group, _members in KNOWN_ALLERGEN_SYNONYMS.items():
+    REVERSE_ALLERGEN_INDEX[_group] = _group
+    for _member in _members:
+        REVERSE_ALLERGEN_INDEX[_member] = _group
+
 
 def get_allergen_group(ingredient: str) -> str | None:
     normalized = normalize_ingredient(ingredient)
-    for group, members in KNOWN_ALLERGEN_SYNONYMS.items():
-        if normalized in members or normalized == group:
-            return group
-    return None
+    return REVERSE_ALLERGEN_INDEX.get(normalized)
 
 
 def find_allergen_matches(ingredients: list[str], allergens: list[str]) -> list[dict[str, str]]:

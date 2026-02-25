@@ -155,3 +155,35 @@ async def test_persist_handles_db_error_gracefully():
     result = await _persist_conversation(db, user, "conv-1", "thread-1", "Hello", "Hi there!")
 
     assert result is None
+
+
+@pytest.mark.asyncio
+async def test_persist_handles_integrity_error(caplog):
+    """IntegrityError should be caught, logged as ERROR, and return None."""
+    from sqlalchemy.exc import IntegrityError
+
+    db = _make_db()
+    user = _make_user()
+    db.execute = AsyncMock(
+        side_effect=IntegrityError("duplicate key", params=None, orig=Exception("dup"))
+    )
+
+    result = await _persist_conversation(db, user, "conv-1", "thread-1", "Hello", "Hi there!")
+
+    assert result is None
+
+
+@pytest.mark.asyncio
+async def test_persist_handles_operational_error():
+    """OperationalError should be caught and return None."""
+    from sqlalchemy.exc import OperationalError
+
+    db = _make_db()
+    user = _make_user()
+    db.execute = AsyncMock(
+        side_effect=OperationalError("connection refused", params=None, orig=Exception("conn"))
+    )
+
+    result = await _persist_conversation(db, user, "conv-1", "thread-1", "Hello", "Hi there!")
+
+    assert result is None

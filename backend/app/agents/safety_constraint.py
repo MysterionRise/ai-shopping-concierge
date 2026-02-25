@@ -6,6 +6,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from app.agents.state import AgentState
 from app.catalog.ingredient_parser import (
     KNOWN_ALLERGEN_SYNONYMS,
+    REVERSE_ALLERGEN_INDEX,
     find_allergen_matches,
     normalize_ingredient,
     parse_ingredients,
@@ -42,21 +43,19 @@ def expand_allergens(allergens: list[str]) -> list[str]:
 
     For example, ["paraben"] expands to
     ["paraben", "methylparaben", "ethylparaben", "propylparaben", ...].
+
+    Uses REVERSE_ALLERGEN_INDEX for O(1) group lookups instead of
+    iterating all groups.
     """
     expanded: set[str] = set()
     for allergen in allergens:
         normalized = normalize_ingredient(allergen)
         expanded.add(normalized)
-        # If it's a group name, add all members
-        if normalized in KNOWN_ALLERGEN_SYNONYMS:
-            expanded.update(KNOWN_ALLERGEN_SYNONYMS[normalized])
-        else:
-            # Check if it belongs to a group — add the group + all members
-            for group, members in KNOWN_ALLERGEN_SYNONYMS.items():
-                if normalized in members:
-                    expanded.add(group)
-                    expanded.update(members)
-                    break
+        # O(1) lookup via reverse index to find the group
+        group = REVERSE_ALLERGEN_INDEX.get(normalized)
+        if group:
+            expanded.add(group)
+            expanded.update(KNOWN_ALLERGEN_SYNONYMS[group])
     return sorted(expanded)
 
 

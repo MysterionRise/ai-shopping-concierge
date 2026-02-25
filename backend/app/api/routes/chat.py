@@ -9,6 +9,7 @@ from fastapi.responses import StreamingResponse
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.safety_constraint import OVERRIDE_REFUSAL, check_override_attempt
@@ -163,8 +164,12 @@ async def _persist_conversation(
             )
             await db.commit()
             return str(conversation.id)
+    except IntegrityError as e:
+        logger.error("Integrity constraint violation persisting conversation", error=str(e))
+    except OperationalError as e:
+        logger.warning("Database operation failed persisting conversation", error=str(e))
     except Exception as e:
-        logger.warning("Failed to persist conversation", error=str(e))
+        logger.error("Unexpected error persisting conversation", error=str(e), exc_info=True)
     return None
 
 
@@ -328,7 +333,7 @@ async def chat_stream(
                         if isinstance(output, dict):
                             violations = output.get("safety_violations", [])
                             if violations:
-                                safety_violations = violations
+                                safety_violations.extend(violations)
 
                     # Only stream tokens from the response_synth node
                     is_response = node == "response_synth"

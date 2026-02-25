@@ -12,6 +12,7 @@ def test_default_settings():
     assert s.persona_enabled is False
     assert s.persona_scorer == "mock"
     assert "http://localhost:3000" in s.cors_origins
+    assert s.db_statement_timeout_ms == 30000
 
 
 def test_settings_log_level():

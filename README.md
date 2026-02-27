@@ -28,8 +28,8 @@ A production-grade multi-agent AI system for personalized beauty and skincare re
     └─────────┬──┘  └─────┬─────┘  └──┬─────────┘
               │            │            │
     ┌─────────┴──┐  ┌─────┴─────┐  ┌──┴─────────┐
-    │ PostgreSQL │  │   Redis   │  │  ChromaDB  │
-    │ (pgvector) │  │           │  │  (vectors) │
+    │ PostgreSQL │  │   Redis   │  │    zvec    │
+    │ (pgvector) │  │           │  │ (embedded) │
     └────────────┘  └───────────┘  └────────────┘
 ```
 
@@ -46,7 +46,7 @@ A production-grade multi-agent AI system for personalized beauty and skincare re
 
 ### Prerequisites
 - Docker and Docker Compose
-- Python 3.11+
+- Python 3.12 (3.13 not yet supported by zvec)
 - Node.js 20+
 
 ### Development Setup
@@ -95,10 +95,10 @@ Then visit `http://localhost` (nginx), `http://localhost:3000` (frontend), or `h
 | Memory | LangMem SDK + AsyncPostgresStore |
 | Database | PostgreSQL 16 (pgvector) |
 | Cache | Redis 7 |
-| Vector Store | ChromaDB |
+| Vector Store | zvec (embedded, Alibaba Proxima) |
 | Persona | MockPersonaScorer (default) or PyTorch + Llama 3.1 8B (optional) |
 | CI/CD | GitHub Actions |
-| Infrastructure | Docker Compose (6 services) |
+| Infrastructure | Docker Compose (5 services) |
 
 ## Agent Graph
 
@@ -166,7 +166,7 @@ ai-shopping-concierge/
 ├── scripts/                 # Demo scenario, test user generation
 ├── docs/                    # Architecture, API, decisions, persona vectors
 ├── infra/                   # Postgres init, Nginx config
-├── docker-compose.yml       # 6-service Docker stack
+├── docker-compose.yml       # 5-service Docker stack
 ├── Makefile                 # Development commands
 └── CHANGELOG.md             # Version history
 ```

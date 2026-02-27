@@ -1,7 +1,7 @@
 .PHONY: infra-up infra-down backend-dev frontend-dev test lint seed seed-catalog migrate-memory compute-persona-vectors demo demo-users
 
 infra-up:
-	docker compose up -d postgres redis chromadb
+	docker compose up -d postgres redis
 	@echo "Waiting for services to be healthy..."
 	@docker compose ps
 

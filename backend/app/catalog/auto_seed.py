@@ -1,7 +1,7 @@
 """Auto-seed product catalog on startup if the products table is empty.
 
 Loads a bundled JSON fixture with 75 beauty products. Computes safety scores
-dynamically using the safety_index module and optionally indexes into ChromaDB.
+dynamically using the safety_index module and optionally indexes into zvec.
 
 Idempotent — only runs when the products table has zero rows.
 """
@@ -97,11 +97,10 @@ async def auto_seed_catalog(session: AsyncSession) -> int:
     await session.commit()
     logger.info("Product catalog seeded", inserted=inserted)
 
-    # Optionally index into ChromaDB (best-effort, non-blocking)
+    # Optionally index into zvec (best-effort, non-blocking)
     try:
-        from app.core.vector_store import get_or_create_collection, upsert_product
+        from app.core.vector_store import optimize_collection, upsert_product
 
-        collection = get_or_create_collection()
         for item in fixture_data:
             ingredients_text = item.get("ingredients_text", "")
             categories_str = ", ".join(item.get("categories", []))
@@ -112,15 +111,15 @@ async def auto_seed_catalog(session: AsyncSession) -> int:
             found = cast(Product | None, result.scalars().first())
             if found:
                 upsert_product(
-                    collection,
                     product_id=str(found.id),
                     name=item.get("name", ""),
                     brand=item.get("brand", "Unknown"),
                     ingredients_text=ingredients_text,
                     categories=categories_str,
                 )
-        logger.info("ChromaDB vector index populated", count=len(fixture_data))
+        optimize_collection()
+        logger.info("zvec vector index populated", count=len(fixture_data))
     except Exception as e:
-        logger.warning("ChromaDB indexing skipped (non-fatal)", error=str(e))
+        logger.warning("zvec indexing skipped (non-fatal)", error=str(e))
 
     return inserted

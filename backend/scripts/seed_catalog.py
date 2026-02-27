@@ -18,7 +18,6 @@ from app.catalog.ingredient_parser import parse_ingredients
 from app.catalog.openbf_client import OpenBeautyFactsClient
 from app.catalog.safety_index import compute_safety_score
 from app.core.database import async_session_factory, engine
-from app.core.vector_store import get_or_create_collection, upsert_product
 from app.models import Base
 from app.models.product import Product
 
@@ -100,15 +99,15 @@ async def seed_from_openbf():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    # Set up ChromaDB collection
+    # Check zvec availability
     try:
-        collection = get_or_create_collection()
-        chroma_ok = True
-        logger.info("ChromaDB collection ready")
+        from app.core.vector_store import optimize_collection, upsert_product
+
+        zvec_ok = True
+        logger.info("zvec vector store ready")
     except Exception as e:
-        logger.warning("ChromaDB unavailable, skipping vector store", error=str(e))
-        collection = None
-        chroma_ok = False
+        logger.warning("zvec unavailable, skipping vector indexing", error=str(e))
+        zvec_ok = False
 
     # Stats
     inserted = 0
@@ -169,11 +168,10 @@ async def seed_from_openbf():
                 session.add(product)
                 inserted += 1
 
-            # Upsert into ChromaDB
-            if chroma_ok and collection is not None:
+            # Upsert into zvec
+            if zvec_ok:
                 try:
                     upsert_product(
-                        collection,
                         product_id=product_id,
                         name=obf_product.product_name,
                         brand=obf_product.brands or "Unknown",
@@ -181,9 +179,12 @@ async def seed_from_openbf():
                         categories=obf_product.categories or "",
                     )
                 except Exception as e:
-                    logger.debug("ChromaDB upsert failed", error=str(e))
+                    logger.debug("zvec upsert failed", error=str(e))
 
         await session.commit()
+
+    if zvec_ok:
+        optimize_collection()
 
     # Summary
     has_ingredients = sum(
@@ -199,7 +200,7 @@ async def seed_from_openbf():
     print(f"  Updated (existing):     {updated}")
     print(f"  With ingredients:       {has_ingredients}")
     print(f"  Without ingredients:    {len(unique_products) - has_ingredients}")
-    print(f"  ChromaDB indexed:       {'yes' if chroma_ok else 'SKIPPED'}")
+    print(f"  zvec indexed:           {'yes' if zvec_ok else 'SKIPPED'}")
     print()
     print("Per-category counts (fetched):")
     for cat in CATEGORIES_TO_SEED:

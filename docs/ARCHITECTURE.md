@@ -19,7 +19,7 @@ The core of the system is a LangGraph `StateGraph` with the following nodes:
 
 ### 2. Product Discovery
 - **Purpose:** Find relevant products from the catalog
-- **Method:** LLM extracts search intent, then hybrid search (Postgres ILIKE + ChromaDB vectors)
+- **Method:** LLM extracts search intent, then zvec hybrid (dense + SPLADE sparse + RRF) with Postgres ILIKE fallback
 - **Allergen pre-filtering:** Removes products matching user's hard constraints
 - **Ingredient interactions:** Flags known incompatible ingredient pairs within products
 - **Ranking:** Safety score, ingredient relevance, user preference match

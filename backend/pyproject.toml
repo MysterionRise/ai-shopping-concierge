@@ -9,7 +9,7 @@ include = ["app*"]
 name = "beauty-concierge"
 version = "0.1.0"
 description = "AI Beauty Shopping Concierge — multi-agent system for personalized skincare recommendations"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [{name = "Konstantin Perikov"}]
 
@@ -29,7 +29,8 @@ dependencies = [
     "langchain-openai>=0.2.0",
     "langchain-core>=0.3.0",
     "langgraph-checkpoint-postgres>=2.0.0",
-    "chromadb>=0.5.0,<0.6.0",
+    "zvec==0.2.0",
+    "sentence-transformers>=2.7.0",
     "psycopg[binary]>=3.2.0",
     "langmem>=0.0.30",
     "slowapi>=0.1.9",
@@ -47,6 +48,9 @@ dev = [
     "mypy>=1.11.0",
     "bandit>=1.7.0",
 ]
+sparse = [
+    "dashtext>=0.1.0",
+]
 persona = [
     "torch>=2.0.0",
     "transformers>=4.40.0",
@@ -55,14 +59,14 @@ persona = [
 
 [tool.black]
 line-length = 100
-target-version = ["py311"]
+target-version = ["py312"]
 
 [tool.isort]
 profile = "black"
 line_length = 100
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true
@@ -81,9 +85,7 @@ addopts = "--strict-markers -v"
 source = ["app"]
 omit = [
     "*/tests/*",
-    "app/core/vector_store.py",
     "app/catalog/openbf_client.py",
-    "app/catalog/product_service.py",
     "app/memory/prompt_optimizer.py",
 ]
 

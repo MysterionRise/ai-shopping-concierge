@@ -85,6 +85,18 @@ async def lifespan(app: FastAPI):
     # Compile graph with checkpointer and store
     app.state.graph = compile_graph(checkpointer, store=store)
 
+    # Initialize zvec embedded vector store
+    try:
+        import zvec as _zvec
+
+        from app.core.vector_store import initialize_zvec
+
+        _zvec.init()
+        initialize_zvec()
+        logger.info("zvec vector store initialized")
+    except Exception as e:
+        logger.warning("zvec init failed (vector search disabled)", error=str(e))
+
     # Auto-seed product catalog if empty
     try:
         from app.catalog.auto_seed import auto_seed_catalog

@@ -47,7 +47,7 @@
 
 ### Added
 - **Catalog seeding** from Open Beauty Facts (10 categories, ~1000 products)
-- **Hybrid search** — Postgres ILIKE + ChromaDB vector similarity
+- **Hybrid search** — Postgres ILIKE + zvec embedded vector similarity
 - **Frontend product cards** — safety badges, ingredient lists, fit reasons
 - Safety scoring with irritant DB (16 entries) and comedogenic DB (12 entries)
 - Data completeness scoring for catalog entries
@@ -56,7 +56,7 @@
 
 ### Added
 - **AsyncPostgresSaver** — persistent LangGraph checkpointing
-- **Docker Compose E2E** — all 6 services boot cleanly
+- **Docker Compose E2E** — all 5 services boot cleanly
 - **SSE streaming robustness** — timeout handling, disconnect detection, error display
 
 ## v0.1.0 — Phase 1: Foundation
@@ -69,5 +69,5 @@
 - Ingredient parser with 10 allergen synonym groups
 - Override detection and refusal
 - Demo LLM mode (works without API key)
-- PostgreSQL, Redis, ChromaDB infrastructure
+- PostgreSQL, Redis, zvec infrastructure
 - 76 unit tests, CI/CD pipeline

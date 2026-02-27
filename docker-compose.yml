@@ -28,23 +28,6 @@ services:
       timeout: 5s
       retries: 5
 
-  chromadb:
-    image: chromadb/chroma:0.5.23
-    ports:
-      - "8000:8000"
-    volumes:
-      - chromadata:/chroma/chroma
-    environment:
-      ANONYMIZED_TELEMETRY: "false"
-      CHROMA_SERVER_THREAD_POOL_SIZE: "2"
-    security_opt:
-      - "seccomp:unconfined"
-    healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/heartbeat')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   backend:
     build: ./backend
     ports:
@@ -54,19 +37,18 @@ services:
       DATABASE_URL_SYNC: postgresql://concierge:concierge@postgres:5432/concierge
       CHECKPOINT_DB_URL: postgresql://concierge:concierge@postgres:5432/concierge
       REDIS_URL: redis://redis:6379/0
-      CHROMADB_HOST: chromadb
-      CHROMADB_PORT: 8000
+      ZVEC_COLLECTION_PATH: /app/data/zvec_products
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-anthropic/claude-sonnet-4-20250514}
       PERSONA_ENABLED: ${PERSONA_ENABLED:-false}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       CORS_ORIGINS: '["http://localhost:3000", "http://localhost"]'
+    volumes:
+      - zvecdata:/app/data
     depends_on:
       postgres:
         condition: service_healthy
       redis:
-        condition: service_healthy
-      chromadb:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
@@ -95,4 +77,4 @@ services:
 volumes:
   pgdata:
   redisdata:
-  chromadata:
+  zvecdata:

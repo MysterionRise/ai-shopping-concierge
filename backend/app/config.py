@@ -17,9 +17,9 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = "redis://localhost:6379/0"
 
-    # ChromaDB
-    chromadb_host: str = "localhost"
-    chromadb_port: int = 8000
+    # zvec (embedded vector store)
+    zvec_collection_path: str = "./data/zvec_products"
+    zvec_sparse_enabled: bool = True
 
     # Database tuning
     db_statement_timeout_ms: int = 30000

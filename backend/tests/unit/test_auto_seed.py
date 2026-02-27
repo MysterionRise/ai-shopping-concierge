@@ -124,8 +124,8 @@ class TestAutoSeedCatalog:
         assert inserted == 1
 
     @pytest.mark.asyncio
-    async def test_chromadb_failure_non_fatal(self, tmp_path):
-        """ChromaDB indexing failure should not prevent seeding."""
+    async def test_vector_indexing_failure_non_fatal(self, tmp_path):
+        """Vector indexing failure should not prevent seeding."""
         fixture = [
             {
                 "openbf_code": "P004",
@@ -147,5 +147,5 @@ class TestAutoSeedCatalog:
         with patch("app.catalog.auto_seed.FIXTURE_PATH", fixture_path):
             inserted = await auto_seed_catalog(session)
 
-        # Should still return 1 even though ChromaDB import will fail
+        # Should still return 1 even though vector store import will fail
         assert inserted == 1

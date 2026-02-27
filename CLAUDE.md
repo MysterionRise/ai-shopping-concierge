@@ -4,7 +4,7 @@
 
 Multi-agent AI system for personalized beauty/skincare product recommendations. Built as a portfolio project demonstrating LangGraph orchestration, safety-first architecture, long-term memory, and persona monitoring.
 
-**Stack:** FastAPI + LangGraph (backend) | React 18 + TypeScript + Tailwind (frontend) | PostgreSQL + Redis + ChromaDB (data)
+**Stack:** FastAPI + LangGraph (backend) | React 18 + TypeScript + Tailwind (frontend) | PostgreSQL + Redis + zvec (data)
 
 ---
 
@@ -12,7 +12,7 @@ Multi-agent AI system for personalized beauty/skincare product recommendations. 
 
 ```bash
 # 1. Infrastructure
-make infra-up              # Starts postgres, redis, chromadb
+make infra-up              # Starts postgres, redis
 
 # 2. Backend
 cp .env.example .env       # Configure (works without API key via demo mode)
@@ -48,7 +48,7 @@ triage_router ──── classify intent via LLM
      │          safety_pre_filter ── rule-based allergen check
      │                    │
      │                    ▼
-     │          product_discovery ── extract search intent, query DB/vectors
+     │          product_discovery ── extract search intent, query DB/zvec embedded vectors
      │                    │
      │                    ▼
      │          safety_post_validate ── LLM synonym check
@@ -188,8 +188,8 @@ All config via environment variables, loaded by `app/config.py` (Pydantic Settin
 | `DATABASE_URL` | `postgresql+asyncpg://...` | Async DB connection |
 | `DATABASE_URL_SYNC` | `postgresql://...` | Sync DB (Alembic) |
 | `REDIS_URL` | `redis://localhost:6379/0` | Redis connection |
-| `CHROMADB_HOST` | `localhost` | ChromaDB host |
-| `CHROMADB_PORT` | `8000` | ChromaDB port |
+| `ZVEC_COLLECTION_PATH` | `./data/zvec_products` | Path for zvec embedded vector store |
+| `ZVEC_SPARSE_ENABLED` | `true` | Enable SPLADE sparse embedder for hybrid search |
 | `PERSONA_ENABLED` | `false` | Enable persona monitoring (requires torch) |
 | `LOG_LEVEL` | `INFO` | Logging level |
 | `CORS_ORIGINS` | `["http://localhost:3000"]` | Allowed origins |
@@ -207,15 +207,14 @@ All config via environment variables, loaded by `app/config.py` (Pydantic Settin
 |---------|-------|------|---------|
 | postgres | pgvector/pgvector:pg16 | 5432 | Main DB with vector support |
 | redis | redis:7-alpine | 6379 | Cache, memory, persona scores |
-| chromadb | chromadb/chroma:0.5.23 | 8000 | Vector similarity search |
-| backend | ./backend (Dockerfile) | 8080 | FastAPI application |
+| backend | ./backend (Dockerfile) | 8080 | FastAPI application (zvec runs in-process) |
 | frontend | ./frontend (Dockerfile) | 3000 (dev) / 80 (prod) | React SPA |
 | nginx | nginx:alpine | 80 | Reverse proxy |
 
 ```bash
-make infra-up    # Start postgres, redis, chromadb only
+make infra-up    # Start postgres, redis only (zvec runs in-process)
 make infra-down  # Stop everything
-docker compose up --build   # Full stack (6 services)
+docker compose up --build   # Full stack (5 services)
 ```
 
 ---
@@ -244,9 +243,9 @@ make migrate         # alembic upgrade head
 
 ### Testing
 - **Framework:** pytest + pytest-asyncio (asyncio_mode=auto)
-- **529 backend tests** across 41 test files (unit, integration, eval)
+- **552 backend tests** across 41 test files (unit, integration, eval)
 - **150 frontend tests** across 22 test files (vitest + @testing-library/react)
-- **679 total tests**, all passing, ~17s execution time
+- **702 total tests**, all passing, ~17s execution time
 - **Coverage:** 85% (threshold: 70%)
 - **Coverage omissions:** persona/*, vector_store, openbf_client, product_service, prompt_optimizer
 - **Mocking pattern:** `conftest.py` patches `get_llm` across all 5 agent modules, provides mock_db_session and mock_redis fixtures
@@ -282,12 +281,12 @@ make migrate         # alembic upgrade head
 
 ## Known Issues & Gotchas
 
-- **ChromaDB on macOS Docker:** Requires `security_opt: ["seccomp:unconfined"]` and pinned to 0.5.23 (latest has thread spawn issues)
-- **Python version:** Must be 3.11+ (pyenv local 3.13.3 set via `.python-version`)
+- **zvec requires Python 3.12** (3.13 not yet supported)
+- **Python version:** Must be 3.12+ (pyenv local 3.12.x set via `.python-version`)
 - **pyproject.toml:** Requires `[tool.setuptools.packages.find] include = ["app*"]` to avoid flat-layout error with alembic dir
 - **structlog:** Use simple config only (no `wrapper_class`/`context_class` — causes KeyError)
 - **Demo mode:** When `OPENROUTER_API_KEY` is empty, `DemoChatModel` returns deterministic responses — good for demos but doesn't exercise real LLM behavior
-- **Product catalog:** Auto-seeds from fixture on startup; full catalog via `make seed` (requires ChromaDB + Postgres running)
+- **Product catalog:** Auto-seeds from fixture on startup; full catalog via `make seed` (requires Postgres running)
 - **Persona monitoring:** Optional, disabled by default. Requires `pip install -e ".[persona]"` + ~16GB RAM for Llama 3.1 8B model
 - **Frontend bundle:** 720KB (single chunk warning) — could benefit from code splitting
 
@@ -306,14 +305,15 @@ make migrate         # alembic upgrade head
 - Memory/constraint API (store, retrieve, delete)
 - SSE streaming endpoint
 - Complete React frontend (chat, profile, allergy manager, memory viewer, persona dashboard)
-- Docker Compose (6 services)
+- Docker Compose (5 services)
 - Alembic async migrations
 - CI pipeline (GitHub Actions: lint, security, test)
-- 679 tests (529 backend + 150 frontend), 85% coverage
+- 702 tests (552 backend + 150 frontend), 85% coverage
 - Demo scripts (scenario + test user generation)
 - LangGraph checkpointing via `AsyncPostgresSaver` (auto-creates tables, MemorySaver fallback)
-- Full Docker Compose E2E (6 services boot cleanly, backend runs alembic on startup, nginx reverse proxy with SSE support)
-- Product discovery with hybrid search (keyword + vector), allergen filtering, and ingredient interaction checking
+- Full Docker Compose E2E (5 services boot cleanly, backend runs alembic on startup, nginx reverse proxy with SSE support)
+- Product discovery with hybrid search (keyword + vector via zvec), allergen filtering, and ingredient interaction checking
+- Embedded vector store (zvec) with dense + sparse hybrid search and RRF re-ranking
 - Conversation persistence (auto-saves user and assistant messages to DB after each chat)
 - Persona monitoring frontend (SSE streaming, historical tracking, drift charts, alerts)
 - Memory viewer frontend (real data from backend API, delete support, privacy consent toggle)

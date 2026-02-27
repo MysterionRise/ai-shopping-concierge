@@ -194,9 +194,9 @@ All config via environment variables, loaded by `app/config.py` (Pydantic Settin
 | `LOG_LEVEL` | `INFO` | Logging level |
 | `CORS_ORIGINS` | `["http://localhost:3000"]` | Allowed origins |
 | `LLM_TIMEOUT_SECONDS` | `60` | Timeout for LLM calls in streaming |
-| `RATE_LIMIT_CHAT` | `"20/minute"` | Rate limit for chat endpoints |
-| `CORS_METHODS` | `["GET","POST","PATCH","DELETE"]` | Allowed HTTP methods |
-| `CORS_HEADERS` | `["Content-Type","X-User-ID"]` | Allowed request headers |
+| `RATE_LIMIT_CHAT` | `"30/minute"` | Rate limit for chat endpoints |
+| `CORS_METHODS` | `["GET","POST","PATCH","DELETE","OPTIONS"]` | Allowed HTTP methods |
+| `CORS_HEADERS` | `["Content-Type","Authorization","X-Request-ID","X-User-ID"]` | Allowed request headers |
 | `DB_STATEMENT_TIMEOUT_MS` | `30000` | PostgreSQL statement timeout |
 
 ---
@@ -243,9 +243,9 @@ make migrate         # alembic upgrade head
 
 ### Testing
 - **Framework:** pytest + pytest-asyncio (asyncio_mode=auto)
-- **552 backend tests** across 41 test files (unit, integration, eval)
+- **539+ backend tests** across 40+ test files (unit, integration, eval)
 - **150 frontend tests** across 22 test files (vitest + @testing-library/react)
-- **702 total tests**, all passing, ~17s execution time
+- **689+ total tests**, all passing, ~17s execution time
 - **Coverage:** 85% (threshold: 70%)
 - **Coverage omissions:** persona/*, vector_store, openbf_client, product_service, prompt_optimizer
 - **Mocking pattern:** `conftest.py` patches `get_llm` across all 5 agent modules, provides mock_db_session and mock_redis fixtures
@@ -271,7 +271,7 @@ make migrate         # alembic upgrade head
 | `backend/app/core/llm.py` | LLM factory + DemoChatModel — all LLM access goes through `get_llm()` |
 | `backend/app/config.py` | Pydantic Settings — all env vars |
 | `backend/app/api/routes/chat.py` | Main chat endpoint — loads user, invokes graph, returns response |
-| `backend/app/catalog/ingredient_parser.py` | INCI parser + allergen synonym dictionary (10 groups) + REVERSE_ALLERGEN_INDEX |
+| `backend/app/catalog/ingredient_parser.py` | INCI parser + allergen synonym dictionary (13 groups) + REVERSE_ALLERGEN_INDEX |
 | `backend/app/core/rate_limit.py` | Rate limiting via slowapi (per-user key extraction) |
 | `backend/app/memory/memory_manager.py` | Memory abstraction layer over Redis |
 | `frontend/src/stores/chatStore.ts` | Chat state + message sending logic |
@@ -299,7 +299,7 @@ make migrate         # alembic upgrade head
 - Demo LLM mode (works without API key)
 - User CRUD with allergies, skin type, concerns, preferences
 - Safety dual-gate with override detection and refusal
-- Ingredient parser with 10 allergen synonym groups
+- Ingredient parser with 13 allergen synonym groups
 - Safety scoring (irritant DB + comedogenic DB)
 - Memory manager (Redis-backed, 4 namespaces)
 - Memory/constraint API (store, retrieve, delete)
@@ -308,7 +308,7 @@ make migrate         # alembic upgrade head
 - Docker Compose (5 services)
 - Alembic async migrations
 - CI pipeline (GitHub Actions: lint, security, test)
-- 702 tests (552 backend + 150 frontend), 85% coverage
+- 689+ tests (539+ backend + 150 frontend), 85% coverage
 - Demo scripts (scenario + test user generation)
 - LangGraph checkpointing via `AsyncPostgresSaver` (auto-creates tables, MemorySaver fallback)
 - Full Docker Compose E2E (5 services boot cleanly, backend runs alembic on startup, nginx reverse proxy with SSE support)

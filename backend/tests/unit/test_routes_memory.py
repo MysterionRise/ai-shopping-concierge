@@ -76,7 +76,10 @@ class TestGetMemories:
             },
         )
 
-        resp = client.get(f"/api/v1/users/{user_id}/memory")
+        resp = client.get(
+            f"/api/v1/users/{user_id}/memory",
+            headers={"X-User-ID": user_id},
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert isinstance(data, list)
@@ -87,13 +90,21 @@ class TestGetMemories:
 
     def test_get_memories_empty(self, client):
         """Should return empty list when user has no memories."""
-        resp = client.get(f"/api/v1/users/{uuid.uuid4()}/memory")
+        user_id = str(uuid.uuid4())
+        resp = client.get(
+            f"/api/v1/users/{user_id}/memory",
+            headers={"X-User-ID": user_id},
+        )
         assert resp.status_code == 200
         assert resp.json() == []
 
     def test_get_memories_no_store(self, client_no_store):
         """Should return empty list when store is not configured."""
-        resp = client_no_store.get(f"/api/v1/users/{uuid.uuid4()}/memory")
+        user_id = str(uuid.uuid4())
+        resp = client_no_store.get(
+            f"/api/v1/users/{user_id}/memory",
+            headers={"X-User-ID": user_id},
+        )
         assert resp.status_code == 200
         assert resp.json() == []
 
@@ -106,7 +117,10 @@ class TestGetMemories:
             {"content": "Test fact", "category": "preference", "created_at": "2024-01-01"},
         )
 
-        resp = client.get(f"/api/v1/users/{user_id}/memory")
+        resp = client.get(
+            f"/api/v1/users/{user_id}/memory",
+            headers={"X-User-ID": user_id},
+        )
         data = resp.json()
         item = data[0]
         assert "id" in item
@@ -126,19 +140,30 @@ class TestDeleteMemory:
             {"content": "Delete me", "category": "preference", "created_at": "2024-01-01"},
         )
 
-        resp = client.delete(f"/api/v1/users/{user_id}/memory/fact_to_delete")
+        resp = client.delete(
+            f"/api/v1/users/{user_id}/memory/fact_to_delete",
+            headers={"X-User-ID": user_id},
+        )
         assert resp.status_code == 200
         assert resp.json()["status"] == "deleted"
 
     def test_delete_memory_not_found(self, client):
         """DELETE should return not_found when memory doesn't exist."""
-        resp = client.delete("/api/v1/users/test-user/memory/nonexistent")
+        user_id = "test-user"
+        resp = client.delete(
+            f"/api/v1/users/{user_id}/memory/nonexistent",
+            headers={"X-User-ID": user_id},
+        )
         assert resp.status_code == 200
         assert resp.json()["status"] == "not_found"
 
     def test_delete_memory_no_store(self, client_no_store):
         """DELETE should return not_found when store is not configured."""
-        resp = client_no_store.delete("/api/v1/users/test-user/memory/any-id")
+        user_id = "test-user"
+        resp = client_no_store.delete(
+            f"/api/v1/users/{user_id}/memory/any-id",
+            headers={"X-User-ID": user_id},
+        )
         assert resp.status_code == 200
         assert resp.json()["status"] == "not_found"
 
@@ -158,7 +183,10 @@ class TestGetConstraints:
             },
         )
 
-        resp = client.get(f"/api/v1/users/{user_id}/memory/constraints")
+        resp = client.get(
+            f"/api/v1/users/{user_id}/memory/constraints",
+            headers={"X-User-ID": user_id},
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert len(data) == 1
@@ -166,13 +194,21 @@ class TestGetConstraints:
 
     def test_get_constraints_empty(self, client):
         """Should return empty list when user has no constraints."""
-        resp = client.get(f"/api/v1/users/{uuid.uuid4()}/memory/constraints")
+        user_id = str(uuid.uuid4())
+        resp = client.get(
+            f"/api/v1/users/{user_id}/memory/constraints",
+            headers={"X-User-ID": user_id},
+        )
         assert resp.status_code == 200
         assert resp.json() == []
 
     def test_get_constraints_no_store(self, client_no_store):
         """Should return empty list when store is not configured."""
-        resp = client_no_store.get(f"/api/v1/users/{uuid.uuid4()}/memory/constraints")
+        user_id = str(uuid.uuid4())
+        resp = client_no_store.get(
+            f"/api/v1/users/{user_id}/memory/constraints",
+            headers={"X-User-ID": user_id},
+        )
         assert resp.status_code == 200
         assert resp.json() == []
 
@@ -187,6 +223,7 @@ class TestAddConstraint:
         resp = client.post(
             f"/api/v1/users/{user_id}/memory/constraints",
             json={"constraint": "paraben", "is_hard": True},
+            headers={"X-User-ID": user_id},
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -208,6 +245,7 @@ class TestAddConstraint:
         resp = client.post(
             f"/api/v1/users/{user_id}/memory/constraints",
             json={"constraint": "vegan", "is_hard": False},
+            headers={"X-User-ID": user_id},
         )
         assert resp.status_code == 200
 
@@ -223,6 +261,7 @@ class TestAddConstraint:
         resp = client.post(
             "/api/v1/users/test-user/memory/constraints",
             json={"constraint": "sulfate", "is_hard": True},
+            headers={"X-User-ID": "test-user"},
         )
         assert resp.status_code == 200
         mock_add_constraint.assert_called_once()
@@ -235,5 +274,6 @@ class TestAddConstraint:
         resp = client.post(
             "/api/v1/users/test-user/memory/constraints",
             json={"is_hard": True},
+            headers={"X-User-ID": "test-user"},
         )
         assert resp.status_code == 422

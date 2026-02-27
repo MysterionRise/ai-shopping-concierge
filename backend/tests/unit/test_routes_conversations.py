@@ -65,7 +65,10 @@ class TestListConversations:
         mock_result.scalars.return_value.all.return_value = [conv1, conv2]
         mock_db.execute = AsyncMock(return_value=mock_result)
 
-        resp = client.get(f"/api/v1/conversations?user_id={user_id}")
+        resp = client.get(
+            f"/api/v1/conversations?user_id={user_id}",
+            headers={"X-User-ID": user_id},
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert isinstance(data, list)
@@ -75,22 +78,30 @@ class TestListConversations:
 
     def test_list_conversations_empty(self, client, mock_db):
         """Should return empty list when user has no conversations."""
+        user_id = str(uuid.uuid4())
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = []
         mock_db.execute = AsyncMock(return_value=mock_result)
 
-        resp = client.get(f"/api/v1/conversations?user_id={uuid.uuid4()}")
+        resp = client.get(
+            f"/api/v1/conversations?user_id={user_id}",
+            headers={"X-User-ID": user_id},
+        )
         assert resp.status_code == 200
         assert resp.json() == []
 
     def test_list_conversations_response_shape(self, client, mock_db):
         """Each conversation should have required fields."""
+        user_id = str(uuid.uuid4())
         conv = _make_mock_conversation()
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = [conv]
         mock_db.execute = AsyncMock(return_value=mock_result)
 
-        resp = client.get(f"/api/v1/conversations?user_id={uuid.uuid4()}")
+        resp = client.get(
+            f"/api/v1/conversations?user_id={user_id}",
+            headers={"X-User-ID": user_id},
+        )
         data = resp.json()
         item = data[0]
         assert "id" in item
@@ -124,7 +135,10 @@ class TestGetMessages:
 
         mock_db.execute = AsyncMock(side_effect=[conv_result, msg_result])
 
-        resp = client.get(f"/api/v1/conversations/{conv_id}/messages?user_id={user_id}")
+        resp = client.get(
+            f"/api/v1/conversations/{conv_id}/messages?user_id={user_id}",
+            headers={"X-User-ID": user_id},
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert len(data) == 2
@@ -135,17 +149,22 @@ class TestGetMessages:
 
     def test_get_messages_conversation_not_found(self, client, mock_db):
         """Should return 404 when conversation doesn't exist."""
+        user_id = str(uuid.uuid4())
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
         mock_db.execute = AsyncMock(return_value=mock_result)
 
-        resp = client.get(f"/api/v1/conversations/{uuid.uuid4()}/messages?user_id={uuid.uuid4()}")
+        resp = client.get(
+            f"/api/v1/conversations/{uuid.uuid4()}/messages?user_id={user_id}",
+            headers={"X-User-ID": user_id},
+        )
         assert resp.status_code == 404
         assert resp.json()["detail"] == "Conversation not found"
 
     def test_get_messages_response_shape(self, client, mock_db):
         """Each message should have required fields."""
-        conv = _make_mock_conversation()
+        user_id = str(uuid.uuid4())
+        conv = _make_mock_conversation(user_id=user_id)
         msg = _make_mock_message(content="Test message")
 
         conv_result = MagicMock()
@@ -154,7 +173,10 @@ class TestGetMessages:
         msg_result.scalars.return_value.all.return_value = [msg]
         mock_db.execute = AsyncMock(side_effect=[conv_result, msg_result])
 
-        resp = client.get(f"/api/v1/conversations/{conv.id}/messages?user_id={conv.user_id}")
+        resp = client.get(
+            f"/api/v1/conversations/{conv.id}/messages?user_id={user_id}",
+            headers={"X-User-ID": user_id},
+        )
         data = resp.json()
         item = data[0]
         assert "id" in item

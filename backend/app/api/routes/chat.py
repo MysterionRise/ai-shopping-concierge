@@ -7,7 +7,7 @@ import structlog
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
 from langchain_core.messages import HumanMessage
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -30,6 +30,13 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=5000)
     user_id: str = Field(..., pattern=r"^[0-9a-fA-F-]{36}$")
     conversation_id: str | None = None
+
+    @field_validator("message")
+    @classmethod
+    def message_not_blank(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("Message must not be blank")
+        return v
 
 
 class ChatResponse(BaseModel):
@@ -184,7 +191,8 @@ async def chat(
     logger.info("Chat request", user_id=chat_request.user_id, message=chat_request.message[:100])
 
     conversation_id = chat_request.conversation_id or str(uuid.uuid4())
-    thread_id = str(uuid.uuid4())
+    # Reuse conversation_id as thread_id so checkpointing preserves multi-turn context
+    thread_id = conversation_id
 
     if check_override_attempt(chat_request.message):
         return ChatResponse(
@@ -270,7 +278,8 @@ async def chat_stream(
         return StreamingResponse(override_stream(), media_type="text/event-stream")
 
     conversation_id = chat_request.conversation_id or str(uuid.uuid4())
-    thread_id = str(uuid.uuid4())
+    # Reuse conversation_id as thread_id so checkpointing preserves multi-turn context
+    thread_id = conversation_id
 
     user, user_profile, hard_constraints, soft_preferences, memory_enabled = (
         await _load_user_context(db, chat_request.user_id)

@@ -134,7 +134,7 @@ class TestDemoChatModel:
             HumanMessage(content="Check these products"),
         ]
         result = self.model._generate(messages)
-        assert "SAFE" in result.generations[0].message.content
+        assert '{"results": []}' in result.generations[0].message.content
 
     def test_conversational_reply_greeting(self):
         messages = [

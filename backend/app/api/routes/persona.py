@@ -53,8 +53,10 @@ async def get_alerts(
 
 
 @router.get("/stream")
-async def persona_stream(conversation_id: str, redis=Depends(get_redis)):
+async def persona_stream(conversation_id: str, request: Request, redis=Depends(get_redis)):
     """SSE stream for real-time persona score updates."""
+    # Consistent with other persona endpoints — check if monitoring is enabled
+    _get_monitor(request)
 
     async def event_stream():
         pubsub = redis.pubsub()

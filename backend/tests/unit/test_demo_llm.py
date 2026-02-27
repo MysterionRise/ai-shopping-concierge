@@ -69,7 +69,7 @@ def test_demo_llm_safety_checker():
             HumanMessage(content="Check these products for safety."),
         ]
     )
-    assert "SAFE" in result.content
+    assert '{"results": []}' in result.content
 
 
 def test_demo_llm_conversational_greeting():
@@ -244,7 +244,7 @@ async def test_astream_safety_checker():
     assert len(chunks) > 1
     reassembled = "".join(chunks)
     assert reassembled == expected_full
-    assert "SAFE" in reassembled
+    assert '{"results": []}' in reassembled
 
 
 async def test_astream_conversational_routine():

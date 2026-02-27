@@ -3,12 +3,12 @@ from typing import Annotated
 from uuid import UUID
 
 import structlog
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.dependencies import get_db_session
+from app.dependencies import get_db_session, verify_user_ownership
 from app.models.user import User
 
 logger = structlog.get_logger()
@@ -71,8 +71,13 @@ class UserResponse(BaseModel):
 
 
 @router.get("", response_model=list[UserResponse])
-async def list_users(db: AsyncSession = Depends(get_db_session)):
-    result = await db.execute(select(User).order_by(User.display_name))
+async def list_users(
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_db_session),
+):
+    stmt = select(User).order_by(User.display_name).limit(limit).offset(offset)
+    result = await db.execute(stmt)
     users = result.scalars().all()
     return [
         UserResponse(
@@ -133,7 +138,13 @@ async def get_user(user_id: UUID, db: AsyncSession = Depends(get_db_session)):
 
 
 @router.patch("/{user_id}", response_model=UserResponse)
-async def update_user(user_id: UUID, data: UserUpdate, db: AsyncSession = Depends(get_db_session)):
+async def update_user(
+    user_id: UUID,
+    data: UserUpdate,
+    request: Request,
+    db: AsyncSession = Depends(get_db_session),
+):
+    verify_user_ownership(request, str(user_id))
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:

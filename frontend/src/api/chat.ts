@@ -1,5 +1,5 @@
 import { ChatResponse, ProductCard, SafetyViolation } from '../types'
-import { apiFetch, apiStreamUrl } from './client'
+import { apiFetch, apiStreamUrl, getActiveUserId } from './client'
 
 export async function sendMessage(
   message: string,
@@ -50,9 +50,13 @@ export function createSSEConnection(
 ): AbortController {
   const controller = new AbortController()
 
+  const sseHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
+  const activeUser = getActiveUserId()
+  if (activeUser) sseHeaders['X-User-ID'] = activeUser
+
   fetch(apiStreamUrl('/chat/stream'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: sseHeaders,
     body: JSON.stringify({
       message,
       user_id: userId,

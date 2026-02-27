@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { setActiveUserId } from '../api/client'
 import { User } from '../types'
 
 interface UserState {
@@ -15,8 +16,14 @@ export const useUserStore = create<UserState>((set) => ({
   user: null,
   availableUsers: [],
   isLoadingUsers: false,
-  setUser: (user) => set({ user }),
-  clearUser: () => set({ user: null }),
+  setUser: (user) => {
+    setActiveUserId(user.id)
+    set({ user })
+  },
+  clearUser: () => {
+    setActiveUserId(null)
+    set({ user: null })
+  },
   setAvailableUsers: (users) => set({ availableUsers: users }),
   setIsLoadingUsers: (loading) => set({ isLoadingUsers: loading }),
 }))

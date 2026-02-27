@@ -65,6 +65,7 @@ class TestChatRateLimit:
             resp = client.post(
                 "/api/v1/chat",
                 json={"message": "hello", "user_id": USER_ID},
+                headers={"X-User-ID": USER_ID},
             )
             assert resp.status_code == 200
 
@@ -74,11 +75,13 @@ class TestChatRateLimit:
             client.post(
                 "/api/v1/chat",
                 json={"message": "hello", "user_id": USER_ID},
+                headers={"X-User-ID": USER_ID},
             )
 
         resp = client.post(
             "/api/v1/chat",
             json={"message": "hello", "user_id": USER_ID},
+            headers={"X-User-ID": USER_ID},
         )
         assert resp.status_code == 429
         assert "rate limit" in resp.json()["detail"].lower()
@@ -91,12 +94,14 @@ class TestChatRateLimit:
             client.post(
                 "/api/v1/chat",
                 json={"message": "hello", "user_id": USER_ID},
+                headers={"X-User-ID": USER_ID},
             )
 
         # User 1 is rate limited
         resp = client.post(
             "/api/v1/chat",
             json={"message": "hello", "user_id": USER_ID},
+            headers={"X-User-ID": USER_ID},
         )
         assert resp.status_code == 429
 
@@ -104,6 +109,7 @@ class TestChatRateLimit:
         resp = client.post(
             "/api/v1/chat",
             json={"message": "hello", "user_id": USER_ID_2},
+            headers={"X-User-ID": USER_ID_2},
         )
         assert resp.status_code == 200
 
@@ -118,11 +124,13 @@ class TestStreamRateLimit:
             client.post(
                 "/api/v1/chat/stream",
                 json={"message": "hello", "user_id": USER_ID},
+                headers={"X-User-ID": USER_ID},
             )
 
         resp = client.post(
             "/api/v1/chat/stream",
             json={"message": "hello", "user_id": USER_ID},
+            headers={"X-User-ID": USER_ID},
         )
         assert resp.status_code == 429
         assert "rate limit" in resp.json()["detail"].lower()
@@ -136,11 +144,13 @@ class TestStreamRateLimit:
             client.post(
                 "/api/v1/chat",
                 json={"message": "hello", "user_id": USER_ID},
+                headers={"X-User-ID": USER_ID},
             )
 
         # 1 request to /chat/stream (limit is 3/minute total per endpoint)
         resp = client.post(
             "/api/v1/chat/stream",
             json={"message": "hello", "user_id": USER_ID},
+            headers={"X-User-ID": USER_ID},
         )
         assert resp.status_code == 200

@@ -1,3 +1,4 @@
+import json
 import re
 
 import structlog
@@ -24,12 +25,19 @@ User allergies: {allergies}
 Products:
 {products}
 
-For each product, respond with:
-- SAFE if no concerns
-- UNSAFE: <reason> if there are concerns
+You MUST respond in this exact JSON format:
+{{"results": [
+  {{"product_index": 0, "status": "SAFE"}},
+  {{"product_index": 1, "status": "UNSAFE", "reason": "contains methylparaben (paraben family)"}}
+]}}
 
-Be thorough — check for ingredient synonyms and related compounds.
-For example, "paraben allergy" means ALL parabens (methylparaben, ethylparaben, etc.) are unsafe."""
+Rules:
+- product_index is the zero-based position in the product list above
+- status is either "SAFE" or "UNSAFE"
+- reason is required when status is "UNSAFE"
+- Be thorough — check for ingredient synonyms and related compounds
+- "paraben allergy" means ALL parabens (methylparaben, ethylparaben, etc.) are unsafe
+- When in doubt, mark as UNSAFE (false positive is safer than false negative)"""
 
 OVERRIDE_REFUSAL = (
     "I understand you'd like to see those products, but I can't recommend items "
@@ -140,8 +148,8 @@ async def safety_constraint_node(state: AgentState) -> dict:
         try:
             llm = get_llm(temperature=0)
             products_text = "\n".join(
-                f"- {p.get('name', 'Unknown')}: {', '.join(p.get('ingredients', [])[:30])}"
-                for p in safe_products
+                f"{i}. {p.get('name', 'Unknown')}: {', '.join(p.get('ingredients', [])[:30])}"
+                for i, p in enumerate(safe_products)
             )
             response = await llm.ainvoke(
                 [
@@ -155,22 +163,46 @@ async def safety_constraint_node(state: AgentState) -> dict:
                 ]
             )
 
-            # Parse LLM response for any UNSAFE flags
             safety_content = (
                 response.content if isinstance(response.content, str) else str(response.content)
             )
-            for line in safety_content.split("\n"):
-                if "UNSAFE" in line.upper():
-                    for product in safe_products[:]:
-                        if product.get("name", "").lower() in line.lower():
-                            safe_products.remove(product)
-                            violations.append(
-                                {
-                                    "product": product.get("name"),
-                                    "reason": line.strip(),
-                                    "gate": "llm_check",
-                                }
-                            )
+
+            # Try JSON parsing first (structured output)
+            unsafe_indices: set[int] = set()
+            unsafe_reasons: dict[int, str] = {}
+            try:
+                parsed = json.loads(safety_content)
+                results = parsed.get("results", [])
+                for item in results:
+                    if item.get("status", "").upper() == "UNSAFE":
+                        idx = item.get("product_index", -1)
+                        if 0 <= idx < len(safe_products):
+                            unsafe_indices.add(idx)
+                            unsafe_reasons[idx] = item.get("reason", "LLM flagged as unsafe")
+            except (json.JSONDecodeError, AttributeError):
+                # Fallback: line-by-line parsing for non-JSON responses
+                for line in safety_content.split("\n"):
+                    if "UNSAFE" in line.upper():
+                        for idx, product in enumerate(safe_products):
+                            name = product.get("name", "").lower()
+                            # Match by product name or index reference
+                            if name and (
+                                name in line.lower()
+                                or any(word in line.lower() for word in name.split()[:3])
+                            ):
+                                unsafe_indices.add(idx)
+                                unsafe_reasons[idx] = line.strip()
+
+            # Remove unsafe products (iterate in reverse to preserve indices)
+            for idx in sorted(unsafe_indices, reverse=True):
+                product = safe_products.pop(idx)
+                violations.append(
+                    {
+                        "product": product.get("name"),
+                        "reason": unsafe_reasons.get(idx, "LLM flagged as unsafe"),
+                        "gate": "llm_check",
+                    }
+                )
         except Exception as e:
             logger.error("LLM safety check failed, keeping rule-based results", error=str(e))
 

@@ -144,6 +144,7 @@ class TestUpdateUser:
         resp = client.patch(
             f"/api/v1/users/{user.id}",
             json={"skin_type": "dry"},
+            headers={"X-User-ID": str(user.id)},
         )
         assert resp.status_code == 200
         # The mock user's skin_type should have been set
@@ -151,13 +152,15 @@ class TestUpdateUser:
 
     def test_update_user_not_found(self, client, mock_db):
         """PATCH /api/v1/users/{id} should return 404 when user doesn't exist."""
+        user_id = str(uuid.uuid4())
         mock_result = MagicMock()
         mock_result.scalar_one_or_none.return_value = None
         mock_db.execute = AsyncMock(return_value=mock_result)
 
         resp = client.patch(
-            f"/api/v1/users/{uuid.uuid4()}",
+            f"/api/v1/users/{user_id}",
             json={"display_name": "New Name"},
+            headers={"X-User-ID": user_id},
         )
         assert resp.status_code == 404
 
@@ -172,6 +175,7 @@ class TestUpdateUser:
         resp = client.patch(
             f"/api/v1/users/{user.id}",
             json={"allergies": ["paraben", "sulfate"]},
+            headers={"X-User-ID": str(user.id)},
         )
         assert resp.status_code == 200
         assert user.allergies == ["paraben", "sulfate"]
@@ -187,6 +191,7 @@ class TestUpdateUser:
         resp = client.patch(
             f"/api/v1/users/{user.id}",
             json={"memory_enabled": False},
+            headers={"X-User-ID": str(user.id)},
         )
         assert resp.status_code == 200
         assert user.memory_enabled is False

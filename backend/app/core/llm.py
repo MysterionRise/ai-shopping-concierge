@@ -94,6 +94,19 @@ class DemoChatModel(BaseChatModel):
                 w in user for w in ["routine", "regimen", "order", "steps", "morning", "evening"]
             ):
                 return "routine_advice"
+            if any(
+                w in user
+                for w in [
+                    "remember",
+                    "know about me",
+                    "what do you know",
+                    "my profile",
+                    "my data",
+                    "my preferences",
+                    "my memories",
+                ]
+            ):
+                return "memory_query"
             return "general_chat"
 
         # Search intent extractor
@@ -147,9 +160,9 @@ class DemoChatModel(BaseChatModel):
                 f"format_preference: {format_preference}"
             )
 
-        # Safety checker
+        # Safety checker — return structured JSON
         if "safety checker" in system:
-            return "All products appear SAFE based on the provided allergy list."
+            return '{"results": []}'
 
         # Response synthesizer (main conversational reply)
         if "beauty" in system and "concierge" in system:
@@ -219,6 +232,27 @@ class DemoChatModel(BaseChatModel):
             )
 
         if "safe products found" in system:
+            # Vary response based on original query terms
+            if "serum" in user:
+                return memory_prefix + (
+                    "I found some great serums that are safe for your skin! "
+                    "Serums are excellent for delivering concentrated active ingredients. "
+                    "Each has been checked against your allergy profile. "
+                    "Would you like more details about any of these?"
+                )
+            if "cleanser" in user:
+                return memory_prefix + (
+                    "Here are some cleansers that match your needs and are safe "
+                    "for your skin! A good cleanser is the foundation of any routine. "
+                    "Each has been verified against your sensitivities. "
+                    "Want to know more about any of these?"
+                )
+            if "sunscreen" in user:
+                return memory_prefix + (
+                    "I found some sunscreens that work for your skin type! "
+                    "Sun protection is essential — these are all safe for your profile. "
+                    "Would you like details on any of these, or should I narrow down further?"
+                )
             return memory_prefix + (
                 "Great news! I found some products that match your needs and are safe "
                 "for your skin profile. Here are my top recommendations:\n\n"

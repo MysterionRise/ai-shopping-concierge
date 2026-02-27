@@ -45,6 +45,7 @@ When updating existing memories:
 """
 
 # Track processed conversations to prevent duplicate extraction
+_MAX_PROCESSED_SIZE = 10_000
 _processed_conversations: set[str] = set()
 _pending_tasks: dict[str, asyncio.Task] = {}
 
@@ -128,6 +129,9 @@ def schedule_extraction(
             payload = {"messages": messages}
 
             executor.submit(payload, config=config, after_seconds=0)
+            # Evict oldest entries if set grows too large
+            if len(_processed_conversations) >= _MAX_PROCESSED_SIZE:
+                _processed_conversations.clear()
             _processed_conversations.add(conversation_id)
             logger.info(
                 "Background extraction submitted",

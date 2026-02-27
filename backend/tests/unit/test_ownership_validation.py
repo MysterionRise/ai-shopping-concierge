@@ -3,7 +3,7 @@
 Verifies that:
 - Matching X-User-ID header allows the request (200)
 - Mismatching X-User-ID header blocks the request (403)
-- Missing header allows the request for backward compatibility (200)
+- Missing header returns 401 (header required)
 """
 
 import uuid
@@ -47,11 +47,16 @@ def client(mock_db, store):
 
 
 class TestVerifyUserOwnership:
-    def test_no_header_skips_validation(self):
-        """Missing X-User-ID header should not raise."""
+    def test_no_header_raises_401(self):
+        """Missing X-User-ID header should raise HTTPException with 401."""
+        from fastapi import HTTPException
+
         mock_request = MagicMock()
         mock_request.headers = {}
-        verify_user_ownership(mock_request, "any-user-id")
+        with pytest.raises(HTTPException) as exc_info:
+            verify_user_ownership(mock_request, "any-user-id")
+        assert exc_info.value.status_code == 401
+        assert "required" in exc_info.value.detail.lower()
 
     def test_matching_header_passes(self):
         """Matching header should not raise."""
@@ -79,14 +84,11 @@ class TestVerifyUserOwnership:
 
 class TestConversationOwnership:
     def test_list_conversations_no_header(self, client, mock_db):
-        """No header should allow request (backward compat)."""
+        """No header should return 401."""
         user_id = str(uuid.uuid4())
-        mock_result = MagicMock()
-        mock_result.scalars.return_value.all.return_value = []
-        mock_db.execute = AsyncMock(return_value=mock_result)
 
         resp = client.get(f"/api/v1/conversations?user_id={user_id}")
-        assert resp.status_code == 200
+        assert resp.status_code == 401
 
     def test_list_conversations_matching_header(self, client, mock_db):
         """Matching header should allow request."""
@@ -152,10 +154,10 @@ class TestConversationOwnership:
 
 class TestMemoryOwnership:
     def test_get_memories_no_header(self, client):
-        """No header should allow request."""
+        """No header should return 401."""
         user_id = str(uuid.uuid4())
         resp = client.get(f"/api/v1/users/{user_id}/memory")
-        assert resp.status_code == 200
+        assert resp.status_code == 401
 
     def test_get_memories_matching_header(self, client):
         """Matching header should allow request."""
@@ -245,17 +247,14 @@ class TestChatOwnership:
         assert resp.status_code == 403
 
     def test_chat_no_header(self, client, mock_db):
-        """No header on /chat should allow request (backward compat)."""
+        """No header on /chat should return 401."""
         user_id = str(uuid.uuid4())
-        mock_result = MagicMock()
-        mock_result.scalar_one_or_none.return_value = None
-        mock_db.execute = AsyncMock(return_value=mock_result)
 
         resp = client.post(
             "/api/v1/chat",
             json={"message": "hello", "user_id": user_id},
         )
-        assert resp.status_code == 200
+        assert resp.status_code == 401
 
     def test_chat_stream_mismatched_header(self, client):
         """Mismatched header on /chat/stream should return 403."""

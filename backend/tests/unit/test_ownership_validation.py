@@ -210,7 +210,7 @@ class TestMemoryOwnership:
     def test_add_constraint_matching_header(self, mock_add, client, store):
         """Matching header on add constraint should allow request."""
         mock_add.return_value = None
-        user_id = "test-owner-match"
+        user_id = str(uuid.uuid4())
         resp = client.post(
             f"/api/v1/users/{user_id}/memory/constraints",
             json={"constraint": "paraben", "is_hard": True},

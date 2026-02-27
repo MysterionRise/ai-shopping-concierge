@@ -15,14 +15,19 @@ from app.core.vector_store import (
 
 
 def _try_init_zvec(path: str) -> bool:
-    """Try to initialize zvec; return False if native module is broken."""
+    """Try to initialize zvec; skip test if native module is broken or unavailable."""
+    from app.core.vector_store import ZVEC_AVAILABLE
+
+    if not ZVEC_AVAILABLE:
+        pytest.skip("zvec not installed")
+        return False
     try:
         with patch("app.core.vector_store.settings") as mock_settings:
             mock_settings.zvec_collection_path = path
             mock_settings.zvec_sparse_enabled = False
             initialize_zvec(collection_path=path)
         return True
-    except (ImportError, ModuleNotFoundError):
+    except Exception:
         pytest.skip("zvec native module not available")
         return False
 

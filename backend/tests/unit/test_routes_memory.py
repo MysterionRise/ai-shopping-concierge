@@ -58,7 +58,7 @@ def client_no_store(mock_db):
 class TestGetMemories:
     def test_get_memories_returns_facts_and_constraints(self, client, store):
         """GET /api/v1/users/{id}/memory should return both facts and constraints."""
-        user_id = "test-user-1"
+        user_id = str(uuid.uuid4())
 
         store.put(
             user_facts_ns(user_id),
@@ -110,7 +110,7 @@ class TestGetMemories:
 
     def test_get_memories_response_shape(self, client, store):
         """Each memory should have required fields."""
-        user_id = "test-shape"
+        user_id = str(uuid.uuid4())
         store.put(
             user_facts_ns(user_id),
             "fact_1",
@@ -133,7 +133,7 @@ class TestGetMemories:
 class TestDeleteMemory:
     def test_delete_memory_found(self, client, store):
         """DELETE should return deleted status when memory exists."""
-        user_id = "test-del"
+        user_id = str(uuid.uuid4())
         store.put(
             user_facts_ns(user_id),
             "fact_to_delete",
@@ -149,7 +149,7 @@ class TestDeleteMemory:
 
     def test_delete_memory_not_found(self, client):
         """DELETE should return not_found when memory doesn't exist."""
-        user_id = "test-user"
+        user_id = str(uuid.uuid4())
         resp = client.delete(
             f"/api/v1/users/{user_id}/memory/nonexistent",
             headers={"X-User-ID": user_id},
@@ -159,7 +159,7 @@ class TestDeleteMemory:
 
     def test_delete_memory_no_store(self, client_no_store):
         """DELETE should return not_found when store is not configured."""
-        user_id = "test-user"
+        user_id = str(uuid.uuid4())
         resp = client_no_store.delete(
             f"/api/v1/users/{user_id}/memory/any-id",
             headers={"X-User-ID": user_id},
@@ -171,7 +171,7 @@ class TestDeleteMemory:
 class TestGetConstraints:
     def test_get_constraints_returns_list(self, client, store):
         """GET /api/v1/users/{id}/memory/constraints should return constraints."""
-        user_id = "test-constraints"
+        user_id = str(uuid.uuid4())
         store.put(
             constraints_ns(user_id),
             "allergy_fragrance",
@@ -218,7 +218,7 @@ class TestAddConstraint:
     def test_add_hard_constraint(self, mock_add_constraint, client, store):
         """POST /api/v1/users/{id}/memory/constraints should add a hard constraint."""
         mock_add_constraint.return_value = None
-        user_id = "test-add"
+        user_id = str(uuid.uuid4())
 
         resp = client.post(
             f"/api/v1/users/{user_id}/memory/constraints",
@@ -240,7 +240,7 @@ class TestAddConstraint:
     def test_add_soft_constraint(self, mock_add_constraint, client, store):
         """Soft constraint should go to user_facts namespace."""
         mock_add_constraint.return_value = None
-        user_id = "test-soft"
+        user_id = str(uuid.uuid4())
 
         resp = client.post(
             f"/api/v1/users/{user_id}/memory/constraints",
@@ -257,23 +257,25 @@ class TestAddConstraint:
     def test_add_constraint_calls_db_persist(self, mock_add_constraint, client, mock_db):
         """add_constraint should be called to persist to Postgres."""
         mock_add_constraint.return_value = None
+        user_id = str(uuid.uuid4())
 
         resp = client.post(
-            "/api/v1/users/test-user/memory/constraints",
+            f"/api/v1/users/{user_id}/memory/constraints",
             json={"constraint": "sulfate", "is_hard": True},
-            headers={"X-User-ID": "test-user"},
+            headers={"X-User-ID": user_id},
         )
         assert resp.status_code == 200
         mock_add_constraint.assert_called_once()
         call_args = mock_add_constraint.call_args
-        assert call_args[0][1] == "test-user"
+        assert call_args[0][1] == user_id
         assert call_args[0][2] == "sulfate"
 
     def test_add_constraint_missing_fields(self, client):
         """Missing constraint field should return 422."""
+        user_id = str(uuid.uuid4())
         resp = client.post(
-            "/api/v1/users/test-user/memory/constraints",
+            f"/api/v1/users/{user_id}/memory/constraints",
             json={"is_hard": True},
-            headers={"X-User-ID": "test-user"},
+            headers={"X-User-ID": user_id},
         )
         assert resp.status_code == 422

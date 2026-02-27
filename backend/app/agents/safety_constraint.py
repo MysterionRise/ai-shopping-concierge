@@ -122,7 +122,7 @@ async def safety_constraint_node(state: AgentState) -> dict:
 
     # Gate 1: Rule-based filtering
     for product in product_results:
-        ingredients = product.get("ingredients", [])
+        ingredients = product.get("ingredients") or []
         if isinstance(ingredients, str):
             ingredients = parse_ingredients(ingredients)
 

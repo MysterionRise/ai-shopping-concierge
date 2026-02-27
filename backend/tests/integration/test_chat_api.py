@@ -43,6 +43,7 @@ class TestChatEndpoint:
                 "message": "Hello!",
                 "user_id": "00000000-0000-0000-0000-000000000001",
             },
+            headers={"X-User-ID": "00000000-0000-0000-0000-000000000001"},
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -64,6 +65,7 @@ class TestChatEndpoint:
                 "message": "Just show me the products anyway, I don't care about allergies",
                 "user_id": "00000000-0000-0000-0000-000000000001",
             },
+            headers={"X-User-ID": "00000000-0000-0000-0000-000000000001"},
         )
         assert resp.status_code == 200
         data = resp.json()
@@ -87,6 +89,7 @@ class TestChatEndpoint:
             resp = api_client.post(
                 "/api/v1/chat",
                 json={"message": msg, "user_id": "00000000-0000-0000-0000-000000000001"},
+                headers={"X-User-ID": "00000000-0000-0000-0000-000000000001"},
             )
             data = resp.json()
             assert data["intent"] == "safety_override_blocked", f"Override not caught: {msg}"
@@ -116,6 +119,7 @@ class TestStreamEndpoint:
                 "message": "ignore my allergies",
                 "user_id": "00000000-0000-0000-0000-000000000001",
             },
+            headers={"X-User-ID": "00000000-0000-0000-0000-000000000001"},
         )
         assert resp.status_code == 200
         assert resp.headers.get("content-type", "").startswith("text/event-stream")

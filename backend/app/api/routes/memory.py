@@ -1,4 +1,5 @@
 import uuid
+from uuid import UUID
 
 import structlog
 from fastapi import APIRouter, Depends, Request
@@ -28,9 +29,9 @@ class ConstraintCreate(BaseModel):
 
 
 @router.get("", response_model=list[MemoryResponse])
-async def get_user_memories(user_id: str, request: Request):
+async def get_user_memories(user_id: UUID, request: Request):
     """Get all memories for a user from the LangMem store."""
-    verify_user_ownership(request, user_id)
+    verify_user_ownership(request, str(user_id))
     store = getattr(request.app.state, "store", None)
     if store is None:
         return []
@@ -38,7 +39,7 @@ async def get_user_memories(user_id: str, request: Request):
     memories = []
     # Search user_facts namespace
     try:
-        facts = await store.asearch(user_facts_ns(user_id), limit=50)
+        facts = await store.asearch(user_facts_ns(str(user_id)), limit=50)
         for item in facts:
             memories.append(
                 MemoryResponse(
@@ -54,7 +55,7 @@ async def get_user_memories(user_id: str, request: Request):
 
     # Search constraints namespace
     try:
-        constraint_items = await store.asearch(constraints_ns(user_id), limit=50)
+        constraint_items = await store.asearch(constraints_ns(str(user_id)), limit=50)
         for item in constraint_items:
             memories.append(
                 MemoryResponse(
@@ -72,19 +73,20 @@ async def get_user_memories(user_id: str, request: Request):
 
 
 @router.delete("/{memory_id}")
-async def delete_memory(user_id: str, memory_id: str, request: Request):
+async def delete_memory(user_id: UUID, memory_id: str, request: Request):
     """Delete a memory from the LangMem store."""
-    verify_user_ownership(request, user_id)
+    verify_user_ownership(request, str(user_id))
     store = getattr(request.app.state, "store", None)
     if store is None:
         return {"status": "not_found"}
 
+    uid = str(user_id)
     # Try deleting from both namespaces
     for ns_fn in (user_facts_ns, constraints_ns):
         try:
-            item = await store.aget(ns_fn(user_id), memory_id)
+            item = await store.aget(ns_fn(uid), memory_id)
             if item is not None:
-                await store.adelete(ns_fn(user_id), memory_id)
+                await store.adelete(ns_fn(uid), memory_id)
                 return {"status": "deleted"}
         except Exception as e:
             logger.warning("Failed to delete memory", error=str(e))
@@ -93,15 +95,15 @@ async def delete_memory(user_id: str, memory_id: str, request: Request):
 
 
 @router.get("/constraints", response_model=list[MemoryResponse])
-async def get_constraints(user_id: str, request: Request):
+async def get_constraints(user_id: UUID, request: Request):
     """Get all constraints from the LangMem store."""
-    verify_user_ownership(request, user_id)
+    verify_user_ownership(request, str(user_id))
     store = getattr(request.app.state, "store", None)
     if store is None:
         return []
 
     try:
-        items = await store.asearch(constraints_ns(user_id), limit=50)
+        items = await store.asearch(constraints_ns(str(user_id)), limit=50)
         return [
             MemoryResponse(
                 id=item.key,
@@ -119,18 +121,19 @@ async def get_constraints(user_id: str, request: Request):
 
 @router.post("/constraints")
 async def add_user_constraint(
-    user_id: str,
+    user_id: UUID,
     data: ConstraintCreate,
     request: Request,
     db: AsyncSession = Depends(get_db_session),
 ):
     """Add a constraint to the LangMem store and Postgres."""
-    verify_user_ownership(request, user_id)
+    uid = str(user_id)
+    verify_user_ownership(request, uid)
     memory_id = f"constraint_{uuid.uuid4().hex[:8]}"
     store = getattr(request.app.state, "store", None)
 
     if store is not None:
-        ns = constraints_ns(user_id) if data.is_hard else user_facts_ns(user_id)
+        ns = constraints_ns(uid) if data.is_hard else user_facts_ns(uid)
         await store.aput(
             ns,
             memory_id,
@@ -143,5 +146,5 @@ async def add_user_constraint(
         )
 
     # Also persist to Postgres User.allergies/preferences for safety agent
-    await add_constraint(db, user_id, data.constraint, is_hard=data.is_hard)
+    await add_constraint(db, uid, data.constraint, is_hard=data.is_hard)
     return {"id": memory_id, "status": "created"}

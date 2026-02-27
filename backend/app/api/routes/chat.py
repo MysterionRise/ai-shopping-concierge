@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.agents.safety_constraint import OVERRIDE_REFUSAL, check_override_attempt
 from app.config import settings
+from app.core.database import async_session_factory
 from app.core.rate_limit import limiter
 from app.dependencies import get_db_session, verify_user_ownership
 from app.memory.background_extractor import schedule_extraction
@@ -393,16 +394,19 @@ async def chat_stream(
             done_payload["safety_violations"] = safety_violations
         yield f"data: {json.dumps(done_payload)}\n\n"
 
-        # Only persist complete, non-errored responses
+        # Only persist complete, non-errored responses.
+        # Use a fresh DB session for persistence — the dependency-injected session
+        # may be closed by FastAPI before this async generator completes.
         if last_model_content and last_model_content.strip() and not stream_errored:
-            persisted_id = await _persist_conversation(
-                db,
-                user,
-                conversation_id,
-                thread_id,
-                chat_request.message,
-                last_model_content,
-            )
+            async with async_session_factory() as persist_db:
+                persisted_id = await _persist_conversation(
+                    persist_db,
+                    user,
+                    conversation_id,
+                    thread_id,
+                    chat_request.message,
+                    last_model_content,
+                )
             if persisted_id:
                 conversation_id_for_eval = persisted_id
             else:

@@ -39,12 +39,12 @@ def initialize_zvec(collection_path: str | None = None) -> None:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
 
     # Load dense embedder (all-MiniLM-L6-v2, 384 dimensions)
-    _dense_embedder = zvec.DefaultLocalDenseEmbedding()
+    _dense_embedder = zvec.DefaultLocalDenseEmbedding()  # type: ignore[attr-defined]
 
     # Try loading sparse embedder (SPLADE)
     if settings.zvec_sparse_enabled:
         try:
-            _sparse_embedder = zvec.DefaultLocalSparseEmbedding()
+            _sparse_embedder = zvec.DefaultLocalSparseEmbedding()  # type: ignore[attr-defined]
             _sparse_available = True
             logger.info("zvec sparse embedder loaded (SPLADE)")
         except Exception as e:
@@ -70,7 +70,7 @@ def initialize_zvec(collection_path: str | None = None) -> None:
             zvec.VectorSchema(
                 name="sparse",
                 data_type=zvec.DataType.SPARSE_VECTOR_FP32,
-                index_param=zvec.InvertIndexParam(),
+                index_param=zvec.InvertIndexParam(),  # type: ignore[arg-type]
             ),
         )
 

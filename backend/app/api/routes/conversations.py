@@ -1,3 +1,5 @@
+from uuid import UUID
+
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
@@ -34,11 +36,11 @@ class MessageResponse(BaseModel):
 
 @router.get("", response_model=list[ConversationResponse])
 async def list_conversations(
-    user_id: str,
+    user_id: UUID,
     request: Request,
     db: AsyncSession = Depends(get_db_session),
 ):
-    verify_user_ownership(request, user_id)
+    verify_user_ownership(request, str(user_id))
     stmt = (
         select(Conversation)
         .where(Conversation.user_id == user_id)
@@ -61,12 +63,12 @@ async def list_conversations(
 
 @router.get("/{conversation_id}/messages", response_model=list[MessageResponse])
 async def get_messages(
-    conversation_id: str,
-    user_id: str,
+    conversation_id: UUID,
+    user_id: UUID,
     request: Request,
     db: AsyncSession = Depends(get_db_session),
 ):
-    verify_user_ownership(request, user_id)
+    verify_user_ownership(request, str(user_id))
     result = await db.execute(
         select(Conversation).where(
             Conversation.id == conversation_id,

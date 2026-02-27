@@ -1,7 +1,9 @@
+from uuid import UUID
+
 import structlog
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_db_session
@@ -35,11 +37,19 @@ async def search_products(
     limit = max(1, min(limit, 100))
     stmt = select(Product)
     if q:
-        # Escape ILIKE wildcards in user input
-        escaped_q = q.replace("%", r"\%").replace("_", r"\_")
-        stmt = stmt.where(
-            Product.name.ilike(f"%{escaped_q}%") | Product.brand.ilike(f"%{escaped_q}%")
-        )
+        # Split multi-word queries into individual terms so each can match independently
+        terms = q.split()
+        term_filters = []
+        for term in terms:
+            escaped_t = term.replace("%", r"\%").replace("_", r"\_")
+            term_filters.append(
+                or_(
+                    Product.name.ilike(f"%{escaped_t}%"),
+                    Product.brand.ilike(f"%{escaped_t}%"),
+                )
+            )
+        if term_filters:
+            stmt = stmt.where(or_(*term_filters))
     stmt = stmt.order_by(Product.safety_score.desc().nullslast()).limit(limit)
     result = await db.execute(stmt)
     products = result.scalars().all()
@@ -61,7 +71,7 @@ async def search_products(
 
 
 @router.get("/{product_id}", response_model=ProductResponse)
-async def get_product(product_id: str, db: AsyncSession = Depends(get_db_session)):
+async def get_product(product_id: UUID, db: AsyncSession = Depends(get_db_session)):
     result = await db.execute(select(Product).where(Product.id == product_id))
     product = result.scalar_one_or_none()
     if not product:

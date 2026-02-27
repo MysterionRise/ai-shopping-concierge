@@ -1,5 +1,6 @@
 import uuid
 from typing import Annotated
+from uuid import UUID
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException
@@ -114,7 +115,7 @@ async def create_user(data: UserCreate, db: AsyncSession = Depends(get_db_sessio
 
 
 @router.get("/{user_id}", response_model=UserResponse)
-async def get_user(user_id: str, db: AsyncSession = Depends(get_db_session)):
+async def get_user(user_id: UUID, db: AsyncSession = Depends(get_db_session)):
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
@@ -132,7 +133,7 @@ async def get_user(user_id: str, db: AsyncSession = Depends(get_db_session)):
 
 
 @router.patch("/{user_id}", response_model=UserResponse)
-async def update_user(user_id: str, data: UserUpdate, db: AsyncSession = Depends(get_db_session)):
+async def update_user(user_id: UUID, data: UserUpdate, db: AsyncSession = Depends(get_db_session)):
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:

@@ -7,6 +7,7 @@ Supports dense semantic search (all-MiniLM-L6-v2) and optional sparse
 Module-level singleton — call ``initialize_zvec()`` once from app lifespan.
 """
 
+import importlib.util
 import threading
 from pathlib import Path
 
@@ -15,6 +16,9 @@ import structlog
 from app.config import settings
 
 logger = structlog.get_logger()
+
+# Check if zvec is installed (without importing native code)
+ZVEC_AVAILABLE = importlib.util.find_spec("zvec") is not None
 
 # Module-level singleton state
 _collection = None
@@ -32,6 +36,10 @@ def initialize_zvec(collection_path: str | None = None) -> None:
             Defaults to ``settings.zvec_collection_path``.
     """
     global _collection, _dense_embedder, _sparse_embedder, _sparse_available
+
+    if not ZVEC_AVAILABLE:
+        logger.warning("zvec not installed, vector search disabled")
+        return
 
     import zvec
 
@@ -103,11 +111,11 @@ def upsert_product(
     categories: str = "",
 ) -> None:
     """Upsert one product into the vector store. Thread-safe."""
-    import zvec
-
     if _collection is None or _dense_embedder is None:
         logger.debug("zvec not initialized, skipping upsert")
         return
+
+    import zvec
 
     doc_text = f"{name} by {brand}. Categories: {categories}. Ingredients: {ingredients_text}"
 
@@ -131,10 +139,10 @@ def upsert_product(
 
 def search_similar(query: str, n_results: int = 10) -> list[dict]:
     """Dense-only semantic search. Backward-compatible return shape."""
-    import zvec
-
     if _collection is None or _dense_embedder is None:
         return []
+
+    import zvec
 
     query_vec = _dense_embedder(query)
     results = _collection.query(
@@ -162,10 +170,10 @@ def search_hybrid(query: str, n_results: int = 10) -> list[dict]:
 
     Falls back to dense-only if sparse embedder is unavailable.
     """
-    import zvec
-
     if _collection is None or _dense_embedder is None:
         return []
+
+    import zvec
 
     query_dense = _dense_embedder(query)
 
